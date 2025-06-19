@@ -1,0 +1,58 @@
+{% extends 'base.html' %}
+
+{% block title %}Setup MFA - MasterTeach{% endblock %}
+
+{% block content %}
+<div class="container mt-5">
+    <div class="row justify-content-center">
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-body text-center">
+                    <h3 class="card-title mb-4">Setup Two-Factor Authentication</h3>
+                    
+                    {% if not mfa_enabled %}
+                        <p class="mb-4">Scan this QR code with your authenticator app (like Google Authenticator or Authy)</p>
+                        <img src="{{ qr_code }}" alt="MFA QR Code" class="img-fluid mb-4" style="max-width: 200px;">
+                        
+                        <form method="post" action="{% url 'verify_mfa' %}" class="mt-4">
+                            {% csrf_token %}
+                            <div class="mb-3">
+                                <label for="code" class="form-label">Enter the 6-digit code from your authenticator app</label>
+                                <input type="text" class="form-control" id="code" name="code" 
+                                       pattern="[0-9]{6}" maxlength="6" required
+                                       placeholder="000000">
+                            </div>
+                            <button type="submit" class="btn btn-primary">Verify and Enable MFA</button>
+                        </form>
+                    {% else %}
+                        <div class="alert alert-success">
+                            <i class="fas fa-check-circle"></i> MFA is already enabled for your account
+                        </div>
+                        <a href="{% url 'profile' %}" class="btn btn-primary">Return to Profile</a>
+                    {% endif %}
+                </div>
+            </div>
+            
+            <div class="card mt-4">
+                <div class="card-body">
+                    <h5 class="card-title">Security Tips</h5>
+                    <ul class="list-unstyled">
+                        <li class="mb-2">
+                            <i class="fas fa-shield-alt text-primary"></i>
+                            Keep your authenticator app secure and don't share your device
+                        </li>
+                        <li class="mb-2">
+                            <i class="fas fa-key text-primary"></i>
+                            Store backup codes in a safe place
+                        </li>
+                        <li>
+                            <i class="fas fa-mobile-alt text-primary"></i>
+                            Make sure your device's time is set correctly
+                        </li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %} 

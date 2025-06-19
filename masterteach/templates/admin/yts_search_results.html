@@ -1,0 +1,62 @@
+{% extends "admin/base_site.html" %}
+{% load i18n admin_urls static admin_modify %}
+
+{% block content %}
+<div id="content-main">
+    <div class="module">
+        <h2>Search Results</h2>
+        {% if movies %}
+            <table>
+                <thead>
+                    <tr>
+                        <th>Title</th>
+                        <th>Action</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for movie in movies %}
+                    <tr>
+                        <td>{{ movie.title }}</td>
+                        <td>
+                            <a href="{% url 'admin:yts-download' movie.url %}" class="button">Download</a>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        {% else %}
+            <p>No movies found.</p>
+        {% endif %}
+        
+        <div class="submit-row">
+            <a href="{% url 'admin:yts-search' %}" class="button">New Search</a>
+        </div>
+    </div>
+</div>
+
+<style>
+    .module table {
+        width: 100%;
+        border-collapse: collapse;
+    }
+    .module th, .module td {
+        padding: 8px;
+        text-align: left;
+        border-bottom: 1px solid #ddd;
+    }
+    .module th {
+        background-color: #f5f5f5;
+    }
+    .button {
+        display: inline-block;
+        padding: 5px 10px;
+        background: #417690;
+        color: white;
+        text-decoration: none;
+        border-radius: 4px;
+    }
+    .button:hover {
+        background: #295570;
+    }
+</style>
+{% endblock %} 

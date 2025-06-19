@@ -1,0 +1,871 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}{{ film.title }} - MasterTeach{% endblock %}
+
+{% block extra_css %}
+<link href="https://cdn.plyr.io/3.7.8/plyr.css" rel="stylesheet">
+<style>
+    .player-container {
+        max-width: 1200px;
+        margin: 0 auto;
+        padding: 2rem;
+    }
+    
+    .video-wrapper {
+        position: relative;
+        width: 100%;
+        background-color: var(--card-background);
+        border-radius: 12px;
+        overflow: hidden;
+        box-shadow: 0 4px 15px var(--shadow-color);
+    }
+    
+    .video-title {
+        font-size: 1.5rem;
+        font-weight: 600;
+        margin-bottom: 1rem;
+        color: var(--text-color);
+    }
+    
+    .subtitle-controls {
+        margin: 1rem 0;
+        padding: 1rem;
+        background-color: var(--card-background);
+        border-radius: 8px;
+        box-shadow: 0 2px 8px var(--shadow-color);
+    }
+    
+    .subtitle-box {
+        position: absolute;
+        bottom: 80px;
+        left: 50%;
+        transform: translateX(-50%);
+        background-color: rgba(0, 0, 0, 0.7);
+        color: white;
+        padding: 0.5rem 1rem;
+        border-radius: 4px;
+        font-size: 1.2rem;
+        text-align: center;
+        max-width: 80%;
+        display: none;
+        z-index: 1000;
+        cursor: move;
+        user-select: none;
+        transition: background-color 0.2s ease;
+        pointer-events: auto;
+        touch-action: none;
+        margin-bottom: 20px;  /* Add space between subtitles */
+    }
+    
+    .subtitle-box:hover {
+        background-color: rgba(0, 0, 0, 0.8);
+    }
+    
+    .subtitle-box.dragging {
+        background-color: rgba(0, 0, 0, 0.9);
+        cursor: grabbing;
+    }
+    
+    .learning-tools {
+        margin-top: 2rem;
+        padding: 1.5rem;
+        background-color: var(--card-background);
+        border-radius: 12px;
+        box-shadow: 0 4px 15px var(--shadow-color);
+    }
+    
+    .tool-section {
+        margin-bottom: 1.5rem;
+    }
+    
+    .tool-section:last-child {
+        margin-bottom: 0;
+    }
+    
+    .tool-title {
+        font-size: 1.25rem;
+        font-weight: 600;
+        margin-bottom: 1rem;
+        color: var(--text-color);
+    }
+    
+    .word-list {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.5rem;
+    }
+    
+    .word-item {
+        background-color: var(--accent-color);
+        color: var(--secondary-color);
+        padding: 0.5rem 1rem;
+        border-radius: 20px;
+        font-size: 0.875rem;
+        cursor: pointer;
+        transition: all 0.3s ease;
+    }
+    
+    .word-item:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 2px 8px var(--shadow-color);
+    }
+    
+    .note-section {
+        margin-top: 1rem;
+    }
+    
+    .note-input {
+        width: 100%;
+        min-height: 100px;
+        padding: 0.75rem;
+        border: 1px solid var(--border-color);
+        border-radius: 8px;
+        background-color: var(--input-background);
+        color: var(--text-color);
+        resize: vertical;
+    }
+    
+    .note-input:focus {
+        outline: none;
+        border-color: var(--accent-color);
+    }
+    
+    .back-button {
+        margin-bottom: 1rem;
+    }
+
+    .player-nav {
+        background-color: var(--card-background);
+        padding: 1rem 0;
+        margin-bottom: 2rem;
+        box-shadow: 0 2px 8px var(--shadow-color);
+    }
+
+    .player-nav .container {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+
+    .player-nav .nav-brand {
+        font-size: 1.5rem;
+        font-weight: 600;
+        color: var(--text-color);
+        text-decoration: none;
+    }
+
+    .player-nav .nav-links {
+        display: flex;
+        gap: 1.5rem;
+        align-items: center;
+    }
+
+    .player-nav .nav-link {
+        color: var(--text-color);
+        text-decoration: none;
+        font-weight: 500;
+        transition: color 0.2s ease;
+    }
+
+    .player-nav .nav-link:hover {
+        color: var(--accent-color);
+    }
+
+    .player-nav .nav-link.active {
+        color: var(--accent-color);
+    }
+
+    /* Update styles for seeking preview */
+    .plyr__preview-thumb {
+        background-color: rgba(0, 0, 0, 0.8);
+        border-radius: 4px;
+        padding: 4px;
+        pointer-events: none;
+        position: absolute;
+        transform: translate(-50%, -100%);
+        z-index: 2;
+        display: none;
+    }
+    
+    .plyr__preview-thumb__inner {
+        background-color: #000;
+        border-radius: 2px;
+        overflow: hidden;
+        position: relative;
+        width: 160px;
+        height: 90px;
+    }
+    
+    .plyr__preview-thumb__inner img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+    }
+    
+    .plyr__preview-thumb__time {
+        background-color: rgba(0, 0, 0, 0.8);
+        border-radius: 2px;
+        color: #fff;
+        font-size: 12px;
+        padding: 2px 4px;
+        position: absolute;
+        right: 4px;
+        top: 4px;
+    }
+
+    .plyr__progress__container {
+        position: relative;
+        cursor: pointer;
+    }
+
+    .plyr__progress__container:hover .plyr__preview-thumb {
+        display: block;
+        opacity: 1;
+    }
+
+    /* Add loading indicator styles */
+    .plyr--loading {
+        position: relative;
+    }
+
+    .plyr--loading::after {
+        content: '';
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        width: 40px;
+        height: 40px;
+        border: 3px solid rgba(255, 255, 255, 0.3);
+        border-radius: 50%;
+        border-top-color: #fff;
+        animation: spin 1s ease-in-out infinite;
+    }
+
+    @keyframes spin {
+        to { transform: translate(-50%, -50%) rotate(360deg); }
+    }
+
+    /* Add error message styles */
+    .plyr--error {
+        position: relative;
+    }
+
+    .plyr--error::after {
+        content: 'Error loading video. Please try refreshing the page.';
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        color: #fff;
+        background: rgba(0, 0, 0, 0.8);
+        padding: 1rem;
+        border-radius: 4px;
+        text-align: center;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+
+<div class="player-container">
+    <a href="{% url 'films:film_detail' film.id %}" class="btn btn-outline-secondary back-button">
+        <button class="btn btn-outline-secondary"><i class="fas fa-arrow-left me-2"></i>Back to Details</button>
+    </a>
+    
+    <h1 class="video-title">{{ film.title }}</h1>
+    
+    <div class="video-wrapper">
+        <video id="player" playsinline controls crossorigin>
+            <source src="{{ film.video_file.url }}" type="video/mp4">
+            <track kind="subtitles" label="English" src="{{ film.english_subtitle.url }}" srclang="en" default>
+            <track kind="subtitles" label="Russian" src="{{ film.russian_subtitle.url }}" srclang="ru">
+        </video>
+        <div id="english-subtitle" class="subtitle-box"></div>
+        <div id="russian-subtitle" class="subtitle-box" style="bottom: 120px;"></div>
+    </div>
+    
+    <div class="subtitle-controls">
+        <div class="btn-group" role="group">
+            <button class="btn btn-outline-primary" onclick="changeSubtitle('en')">
+                <i class="fas fa-language me-2"></i>English
+            </button>
+            <button class="btn btn-outline-primary" onclick="changeSubtitle('ru')">
+                <i class="fas fa-language me-2"></i>Russian
+            </button>
+            <button class="btn btn-outline-warning" onclick="enableDualSubtitles()">
+                <i class="fas fa-closed-captioning me-2"></i>Dual
+            </button>
+        </div>
+    </div>
+    
+    {% if film.cefr_level %}
+    <div class="learning-tools">
+        <div class="tool-section">
+            <h3 class="tool-title">Learning Tools</h3>
+            <div class="word-list">
+                {% for word, level in film.word_frequencies.items %}
+                    <div class="word-item" data-word="{{ word }}" data-level="{{ level }}">
+                        {{ word }}
+                    </div>
+                {% endfor %}
+            </div>
+        </div>
+        
+        <div class="tool-section">
+            <h3 class="tool-title">Take Notes</h3>
+            <div class="note-section">
+                <textarea class="note-input" id="noteInput" placeholder="Take notes while watching..."></textarea>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdn.plyr.io/3.7.8/plyr.js"></script>
+<script>
+const player = new Plyr('#player', {
+    captions: { active: true, language: 'en', update: true },
+    controls: [
+        'play-large', 'play', 'progress', 'current-time', 'mute',
+        'volume', 'captions', 'settings', 'fullscreen'
+    ],
+    keyboard: { focused: true, global: true },
+    tooltips: { controls: true, seek: true },
+    speed: { selected: 1, options: [0.5, 0.75, 1, 1.25, 1.5, 2] },
+    seekTime: 10,
+    clickToPlay: true,
+    togglePlay: true,
+    loadSprite: true,
+    iconUrl: 'https://cdn.plyr.io/3.7.8/plyr.svg',
+    blankVideo: 'https://cdn.plyr.io/static/blank.mp4',
+    quality: { default: 720, options: [4320, 2880, 2160, 1440, 1080, 720, 576, 480, 360, 240] },
+    previewThumbnails: {
+        enabled: true,
+        src: ''
+    },
+    buffering: {
+        enabled: true,
+        threshold: 0.5
+    }
+});
+
+let isDualMode = false;
+let notes = [];
+const videoId = "{{ film.id }}";  // Get Django video ID
+let isNoteInputFocused = false;
+
+// Subtitle position storage (using video-specific keys)
+const getPositionKey = (lang) => `subPos_${videoId}_${lang}`;
+const defaultPositions = {
+    english: { x: 50, y: 60 },  // Moved English subtitle higher
+    russian: { x: 50, y: 140 }  // Moved Russian subtitle lower
+};
+
+// Initialize subtitle positions from storage or defaults
+function initSubtitlePositions() {
+    ['english', 'russian'].forEach(lang => {
+        const savedPos = localStorage.getItem(getPositionKey(lang));
+        if (savedPos) {
+            defaultPositions[lang] = JSON.parse(savedPos);
+        }
+    });
+}
+
+// Make subtitles draggable in fullscreen
+function makeSubtitlesDraggable() {
+    const subtitleBoxes = document.querySelectorAll('.subtitle-box');
+    let currentBox = null;
+    let startX, startY;
+    let initialLeft, initialBottom;
+
+    function dragStart(e) {
+        if (!player.fullscreen.active) return;
+        
+        currentBox = e.target;
+        const rect = currentBox.getBoundingClientRect();
+        const videoRect = document.querySelector('.plyr__video-wrapper').getBoundingClientRect();
+        
+        // Calculate initial positions (convert px to %)
+        initialLeft = ((rect.left + rect.width/2 - videoRect.left) / videoRect.width) * 100;
+        initialBottom = ((videoRect.bottom - rect.bottom) / videoRect.height) * 100;
+        
+        startX = e.clientX;
+        startY = e.clientY;
+        
+        currentBox.classList.add('dragging');
+        e.preventDefault();
+    }
+
+    function drag(e) {
+        if (!currentBox || !player.fullscreen.active) return;
+        
+        const videoRect = document.querySelector('.plyr__video-wrapper').getBoundingClientRect();
+        const deltaX = e.clientX - startX;
+        const deltaY = e.clientY - startY;
+        
+        // Convert delta to percentage
+        const deltaXPercent = (deltaX / videoRect.width) * 100;
+        const deltaYPercent = (deltaY / videoRect.height) * 100;
+        
+        // Calculate new positions
+        let newLeft = initialLeft + deltaXPercent;
+        let newBottom = initialBottom - deltaYPercent; // Invert Y axis
+        
+        // Boundary checks (0-100%)
+        newLeft = Math.max(5, Math.min(newLeft, 95));  // Keep some margin
+        newBottom = Math.max(5, Math.min(newBottom, 95));
+        
+        // Update position
+        currentBox.style.left = `${newLeft}%`;
+        currentBox.style.bottom = `${newBottom}%`;
+        currentBox.style.transform = 'translateX(-50%)';
+    }
+
+    function dragEnd() {
+        if (!currentBox) return;
+        
+        // Save position for this subtitle
+        const id = currentBox.id.includes('english') ? 'english' : 'russian';
+        const rect = currentBox.getBoundingClientRect();
+        const videoRect = document.querySelector('.plyr__video-wrapper').getBoundingClientRect();
+        
+        const newX = ((rect.left + rect.width/2 - videoRect.left) / videoRect.width) * 100;
+        const newY = ((videoRect.bottom - rect.bottom) / videoRect.height) * 100;
+        
+        // Update default positions
+        defaultPositions[id] = { x: newX, y: newY };
+        
+        // Save to localStorage
+        localStorage.setItem(getPositionKey(id), JSON.stringify(defaultPositions[id]));
+        
+        currentBox.classList.remove('dragging');
+        currentBox = null;
+    }
+
+    // Add event listeners to each subtitle box
+    subtitleBoxes.forEach(box => {
+        box.addEventListener('mousedown', dragStart);
+        box.addEventListener('touchstart', handleTouchStart);
+    });
+
+    // Add document-level event listeners
+    document.addEventListener('mousemove', drag);
+    document.addEventListener('mouseup', dragEnd);
+    document.addEventListener('touchmove', handleTouchMove);
+    document.addEventListener('touchend', handleTouchEnd);
+
+    // Touch event handlers
+    function handleTouchStart(e) {
+        if (!player.fullscreen.active) return;
+        e.preventDefault();
+        const touch = e.touches[0];
+        const mouseEvent = new MouseEvent('mousedown', {
+            clientX: touch.clientX,
+            clientY: touch.clientY
+        });
+        dragStart(mouseEvent);
+    }
+
+    function handleTouchMove(e) {
+        if (!currentBox || !player.fullscreen.active) return;
+        e.preventDefault();
+        const touch = e.touches[0];
+        const mouseEvent = new MouseEvent('mousemove', {
+            clientX: touch.clientX,
+            clientY: touch.clientY
+        });
+        drag(mouseEvent);
+    }
+
+    function handleTouchEnd(e) {
+        if (!currentBox) return;
+        e.preventDefault();
+        dragEnd();
+    }
+}
+
+// Update subtitle positions based on stored/default values
+function updateSubtitlePositions() {
+    const videoContainer = document.querySelector('.plyr__video-wrapper');
+    if (!videoContainer) return;
+    
+    if (isDualMode && player.fullscreen.active) {
+        const englishSubtitleBox = document.getElementById('english-subtitle');
+        const russianSubtitleBox = document.getElementById('russian-subtitle');
+        
+        if (englishSubtitleBox && russianSubtitleBox) {
+            englishSubtitleBox.style.bottom = '35%';
+            russianSubtitleBox.style.bottom = '15%';
+        }
+    } else {
+        ['english', 'russian'].forEach(lang => {
+            const box = document.getElementById(`${lang}-subtitle`);
+            if (!box) return;
+            
+            const pos = defaultPositions[lang];
+            box.style.left = `${pos.x}%`;
+            box.style.bottom = `${pos.y}%`;
+            box.style.transform = 'translateX(-50%)';
+        });
+    }
+}
+
+// Subtitle handling functions
+function changeSubtitle(lang) {
+    isDualMode = false;
+    const englishSubtitleBox = document.getElementById('english-subtitle');
+    const russianSubtitleBox = document.getElementById('russian-subtitle');
+    englishSubtitleBox.style.display = 'none';
+    russianSubtitleBox.style.display = 'none';
+    
+    // Reset positions to default
+    englishSubtitleBox.style.bottom = '80px';
+    russianSubtitleBox.style.bottom = '120px';
+    
+    const video = document.querySelector('#player');
+    const tracks = Array.from(video.textTracks);
+    
+    tracks.forEach(track => {
+        if (track.language === lang) {
+            track.mode = 'showing';
+        } else {
+            track.mode = 'hidden';
+        }
+    });
+}
+
+function enableDualSubtitles() {
+    isDualMode = true;
+    const video = document.querySelector('#player');
+    const englishSubtitleBox = document.getElementById('english-subtitle');
+    const russianSubtitleBox = document.getElementById('russian-subtitle');
+    const tracks = Array.from(video.textTracks);
+    
+    // Show both subtitle boxes
+    englishSubtitleBox.style.display = 'block';
+    russianSubtitleBox.style.display = 'block';
+    
+    // Set initial positions for dual mode
+    if (player.fullscreen.active) {
+        // Fullscreen positions
+        englishSubtitleBox.style.bottom = '35%';
+        russianSubtitleBox.style.bottom = '15%';
+    } else {
+        // Normal mode positions
+        englishSubtitleBox.style.bottom = '60%';
+        russianSubtitleBox.style.bottom = '20%';
+    }
+    
+    // Get both tracks
+    const engTrack = tracks.find(track => track.language === 'en');
+    const ruTrack = tracks.find(track => track.language === 'ru');
+    
+    // Hide native captions
+    engTrack.mode = 'hidden';
+    ruTrack.mode = 'hidden';
+    
+    // Update English subtitles
+    engTrack.oncuechange = () => {
+        if (engTrack.activeCues && engTrack.activeCues.length > 0) {
+            const currentCue = engTrack.activeCues[0];
+            englishSubtitleBox.innerText = currentCue.text;
+        } else {
+            englishSubtitleBox.innerText = '';
+        }
+    };
+    
+    // Update Russian subtitles
+    ruTrack.oncuechange = () => {
+        if (ruTrack.activeCues && ruTrack.activeCues.length > 0) {
+            const currentCue = ruTrack.activeCues[0];
+            russianSubtitleBox.innerText = currentCue.text;
+        } else {
+            russianSubtitleBox.innerText = '';
+        }
+    };
+}
+
+// Initialize player
+player.on('ready', function() {
+    initSubtitlePositions();
+    makeSubtitlesDraggable();
+    updateSubtitlePositions();
+    
+    // Initialize with English subtitles
+    changeSubtitle('en');
+});
+
+// Handle fullscreen changes
+player.on('enterfullscreen', function() {
+    if (isDualMode) {
+        const englishSubtitleBox = document.getElementById('english-subtitle');
+        const russianSubtitleBox = document.getElementById('russian-subtitle');
+        
+        // Adjust positions for fullscreen
+        englishSubtitleBox.style.bottom = '35%';
+        russianSubtitleBox.style.bottom = '15%';
+    }
+    setTimeout(updateSubtitlePositions, 100);
+});
+
+player.on('exitfullscreen', function() {
+    if (isDualMode) {
+        const englishSubtitleBox = document.getElementById('english-subtitle');
+        const russianSubtitleBox = document.getElementById('russian-subtitle');
+        
+        // Reset to normal mode positions
+        englishSubtitleBox.style.bottom = '60%';
+        russianSubtitleBox.style.bottom = '20%';
+    } else {
+        // Reset to default positions
+        ['english', 'russian'].forEach((lang, index) => {
+            const box = document.getElementById(`${lang}-subtitle`);
+            if (!box) return;
+            
+            box.style.left = '50%';
+            box.style.bottom = `${defaultPositions[lang].y}%`;
+            box.style.transform = 'translateX(-50%)';
+        });
+    }
+});
+
+// Handle window resize
+window.addEventListener('resize', function() {
+    if (player.fullscreen.active) {
+        updateSubtitlePositions();
+    }
+});
+
+// Word highlighting
+document.querySelectorAll('.word-item').forEach(item => {
+    item.addEventListener('click', function() {
+        const word = this.dataset.word;
+        const level = this.dataset.level;
+        
+        // Highlight word in subtitles
+        const video = document.querySelector('#player');
+        const tracks = Array.from(video.textTracks);
+        const engTrack = tracks.find(track => track.language === 'en');
+        
+        if (engTrack && engTrack.activeCues) {
+            const currentCue = engTrack.activeCues[0];
+            if (currentCue) {
+                const text = currentCue.text;
+                const highlightedText = text.replace(
+                    new RegExp(`\\b${word}\\b`, 'gi'),
+                    `<span style="background-color: var(--accent-color); color: white; padding: 0 2px; border-radius: 2px;">${word}</span>`
+                );
+                currentCue.text = highlightedText;
+            }
+        }
+    });
+});
+
+// Note taking system
+const noteInput = document.getElementById('noteInput');
+let noteTimeout;
+
+function loadNotes() {
+    const savedNotes = localStorage.getItem(`notes_${videoId}`);
+    if (savedNotes) {
+        notes = JSON.parse(savedNotes);
+    }
+}
+
+function saveNotes() {
+    localStorage.setItem(`notes_${videoId}`, JSON.stringify(notes));
+}
+
+// Update note input when video time changes
+player.on('timeupdate', function() {
+    if (isNoteInputFocused) return; // Don't update if user is typing
+    
+    const currentTime = player.currentTime;
+    const currentNote = notes.find(n => Math.abs(n.time - currentTime) < 1);
+    
+    if (currentNote) {
+        noteInput.value = currentNote.text;
+    } else {
+        noteInput.value = '';
+    }
+});
+
+// Handle note input focus
+noteInput.addEventListener('focus', function() {
+    isNoteInputFocused = true;
+});
+
+noteInput.addEventListener('blur', function() {
+    isNoteInputFocused = false;
+    saveCurrentNote();
+});
+
+// Save note when input changes
+noteInput.addEventListener('input', function() {
+    clearTimeout(noteTimeout);
+    noteTimeout = setTimeout(saveCurrentNote, 1000);
+});
+
+function saveCurrentNote() {
+    const currentTime = player.currentTime;
+    const text = noteInput.value.trim();
+    
+    if (text) {
+        // Update or add note
+        const existingNoteIndex = notes.findIndex(n => Math.abs(n.time - currentTime) < 1);
+        if (existingNoteIndex !== -1) {
+            notes[existingNoteIndex].text = text;
+        } else {
+            notes.push({ time: currentTime, text: text });
+        }
+    } else {
+        // Remove note if empty
+        notes = notes.filter(n => Math.abs(n.time - currentTime) >= 1);
+    }
+    
+    saveNotes();
+}
+
+// Initialize notes
+document.addEventListener('DOMContentLoaded', function() {
+    loadNotes();
+});
+
+// Add seeking and scrubbing functionality
+let seekPreview = null;
+
+// Create preview element
+function createSeekPreview() {
+    if (!seekPreview) {
+        seekPreview = document.createElement('div');
+        seekPreview.className = 'plyr__preview-thumb';
+        seekPreview.innerHTML = `
+            <div class="plyr__preview-thumb__inner">
+                <img src="" alt="Preview">
+                <div class="plyr__preview-thumb__time">00:00</div>
+            </div>
+        `;
+        document.querySelector('.plyr__progress__container').appendChild(seekPreview);
+    }
+    return seekPreview;
+}
+
+// Format time
+function formatTime(seconds) {
+    const minutes = Math.floor(seconds / 60);
+    seconds = Math.floor(seconds % 60);
+    return `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+}
+
+// Handle progress bar interaction
+const progressBar = document.querySelector('.plyr__progress__container');
+if (progressBar) {
+    // Simple click handler for seeking
+    progressBar.addEventListener('click', (e) => {
+        if (!player.ready) return;
+        
+        const rect = progressBar.getBoundingClientRect();
+        const percent = Math.max(0, Math.min(1, (e.clientX - rect.left) / rect.width));
+        const seekTime = percent * player.duration;
+        
+        // Seek to the clicked position
+        player.currentTime = seekTime;
+    });
+}
+
+// Add keyboard seeking for precise control
+document.addEventListener('keydown', (e) => {
+    if (player.focused) {
+        switch (e.key) {
+            case 'ArrowLeft':
+                player.currentTime = Math.max(0, player.currentTime - 10); // 10 seconds back
+                break;
+            case 'ArrowRight':
+                player.currentTime = Math.min(player.duration, player.currentTime + 10); // 10 seconds forward
+                break;
+            case 'Home':
+                player.currentTime = 0; // Start of video
+                break;
+            case 'End':
+                player.currentTime = player.duration; // End of video
+                break;
+        }
+    }
+});
+
+// Add error handling
+player.on('error', (error) => {
+    console.error('Player error:', error);
+    // Show error message to user
+    const errorMessage = document.createElement('div');
+    errorMessage.className = 'plyr__error';
+    errorMessage.textContent = 'Error loading video. Please try refreshing the page.';
+    document.querySelector('.plyr').appendChild(errorMessage);
+});
+
+// Add buffering handling
+player.on('waiting', () => {
+    document.querySelector('.plyr').classList.add('plyr--loading');
+});
+
+player.on('playing', () => {
+    document.querySelector('.plyr').classList.remove('plyr--loading');
+});
+
+// Optimize video loading
+const video = document.querySelector('#player');
+video.preload = 'auto';
+
+// Add quality change handling
+player.on('qualitychange', (event) => {
+    const quality = event.detail.quality;
+    console.log('Quality changed to:', quality);
+});
+
+// Add playback rate handling
+player.on('ratechange', (event) => {
+    const rate = event.detail.plyr.speed;
+    console.log('Playback rate changed to:', rate);
+});
+
+// Add buffer handling
+player.on('progress', (event) => {
+    const buffered = event.detail.plyr.buffered;
+    if (buffered.length > 0) {
+        const bufferedEnd = buffered.end(buffered.length - 1);
+        const duration = event.detail.plyr.duration;
+        const bufferedPercent = (bufferedEnd / duration) * 100;
+        console.log('Buffered:', bufferedPercent.toFixed(2) + '%');
+    }
+});
+
+// Add network status handling
+window.addEventListener('online', () => {
+    console.log('Network connection restored');
+    player.play().catch(() => {
+        console.log('Autoplay prevented');
+    });
+});
+
+window.addEventListener('offline', () => {
+    console.log('Network connection lost');
+    player.pause();
+});
+
+// Add visibility change handling
+document.addEventListener('visibilitychange', () => {
+    if (document.hidden) {
+        player.pause();
+    }
+});
+
+// Add memory management
+window.addEventListener('beforeunload', () => {
+    player.destroy();
+});
+</script>
+{% endblock %}

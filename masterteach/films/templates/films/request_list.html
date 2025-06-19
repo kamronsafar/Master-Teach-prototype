@@ -1,0 +1,79 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block content %}
+<div class="container mt-5">
+    <div class="row">
+        <div class="col-12">
+            <h2 class="mb-4">Film Requests</h2>
+            
+            {% if requests %}
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead>
+                            <tr>
+                                <th>Title</th>
+                                <th>Status</th>
+                                <th>Requested</th>
+                                <th>Delivery Type</th>
+                                <th>Estimated Delivery</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for request in requests %}
+                            <tr>
+                                <td>
+                                    <strong>{{ request.title }}</strong>
+                                    {% if request.tmdb_id %}
+                                        <small class="text-muted d-block">TMDB ID: {{ request.tmdb_id }}</small>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    {% if request.status == 'pending' %}
+                                        <span class="badge bg-warning">Pending</span>
+                                    {% elif request.status == 'processing' %}
+                                        <span class="badge bg-info">Processing</span>
+                                    {% elif request.status == 'completed' %}
+                                        <span class="badge bg-success">Completed</span>
+                                    {% elif request.status == 'failed' %}
+                                        <span class="badge bg-danger">Failed</span>
+                                    {% endif %}
+                                </td>
+                                <td>{{ request.created_at|date:"M d, Y H:i" }}</td>
+                                <td>
+                                    {% if request.delivery_type == 'standard' %}
+                                        Standard (24h)
+                                    {% else %}
+                                        Fast (3-4h)
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    {% if request.estimated_delivery %}
+                                        {{ request.estimated_delivery|date:"M d, Y H:i" }}
+                                    {% else %}
+                                        -
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    {% if request.status == 'pending' %}
+                                        <a href="{% url 'films:request_detail' request.id %}" class="btn btn-sm btn-primary">View Details</a>
+                                    {% elif request.status == 'completed' %}
+                                        <a href="{% url 'films:film_detail' request.film.id %}" class="btn btn-sm btn-success">Watch Film</a>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            {% else %}
+                <div class="alert alert-info">
+                    You haven't made any film requests yet.
+                    <a href="{% url 'films:request_film' %}" class="alert-link">Request a film</a>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %} 

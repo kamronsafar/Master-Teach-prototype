@@ -1,0 +1,591 @@
+<!-- yourapp/templates/base.html -->
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}MasterTeach{% endblock %}</title>
+    <!-- Favicon -->
+    <link rel="icon" type="image/svg+xml" href="{% static 'favicon.svg' %}" sizes="512x512">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <!-- Base CSS -->
+    <link rel="stylesheet" href="{% static 'css/style.css' %}">
+    <link rel="stylesheet" href="{% static 'css/language-switcher.css' %}">
+    <link rel="stylesheet" href="{% static 'css/text-translator.css' %}">
+    <!-- User CSS -->
+    <link rel="stylesheet" href="{% static 'css/user.css' %}">
+    <!-- App-specific CSS -->
+    {% block extra_css %}{% endblock %}
+    <style>
+        :root {
+            /* Light mode (default) */
+            --primary-color: #000000;
+            --secondary-color: #ffffff;
+            --accent-color: #ff8c00;
+            --text-color: #333333;
+            --background-color: #ffffff;
+            --border-color: #e0e0e0;
+            --card-background: #ffffff;
+            --input-background: #ffffff;
+            --input-border: #e0e0e0;
+            --shadow-color: rgba(0, 0, 0, 0.1);
+            --loading-bg: #ffffff;
+            --loading-spinner: #3498db;
+        }
+
+        [data-theme="dark"] {
+            --primary-color: #ffffff;
+            --secondary-color: #000000;
+            --accent-color: #ff8c00;
+            --text-color: #ffffff;
+            --background-color: #121212;
+            --border-color: #333333;
+            --card-background: #1e1e1e;
+            --input-background: #2d2d2d;
+            --input-border: #404040;
+            --shadow-color: rgba(0, 0, 0, 0.3);
+            --loading-bg: #121212;
+            --loading-spinner: #ff8c00;
+        }
+
+        body {
+            background-color: var(--background-color);
+            color: var(--text-color);
+            margin: 0;
+            padding: 0;
+            font-family: 'Poppins', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+            transition: background-color 0.3s, color 0.3s;
+        }
+
+        /* Theme Toggle Button */
+        .theme-toggle {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            z-index: 1000;
+            background: none;
+            border: none;
+            cursor: pointer;
+            padding: 10px;
+            border-radius: 50%;
+            background-color: var(--card-background);
+            box-shadow: 0 2px 5px var(--shadow-color);
+            transition: all 0.3s ease;
+        }
+
+        .theme-toggle:hover {
+            transform: scale(1.1);
+        }
+
+        .theme-toggle i {
+            font-size: 1.5rem;
+            color: var(--accent-color);
+        }
+
+        /* Loading Animation */
+        .loading {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: var(--loading-bg);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 9999;
+            transition: opacity 0.5s ease-out;
+        }
+
+        .loading-spinner {
+            width: 50px;
+            height: 50px;
+            border: 5px solid var(--border-color);
+            border-top: 5px solid var(--loading-spinner);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        /* Common Components */
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        .card {
+            background-color: var(--card-background);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 4px var(--shadow-color);
+            transition: all 0.3s ease;
+        }
+
+        /* Form Elements */
+        input, textarea, select {
+            background-color: var(--input-background);
+            color: var(--text-color);
+            border: 1px solid var(--input-border);
+            border-radius: 4px;
+            padding: 8px 12px;
+            margin-bottom: 10px;
+            width: 100%;
+            transition: border-color 0.3s;
+        }
+
+        input:focus, textarea:focus, select:focus {
+            outline: none;
+            border-color: var(--accent-color);
+        }
+
+        button {
+            background-color: var(--accent-color);
+            color: var(--secondary-color);
+            border: none;
+            border-radius: 4px;
+            padding: 10px 20px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        button:hover {
+            background-color: var(--primary-color);
+            transform: translateY(-2px);
+        }
+
+        /* Navigation */
+        nav {
+            background-color: var(--card-background);
+            padding: 15px;
+            border-bottom: 1px solid var(--border-color);
+            box-shadow: 0 2px 4px var(--shadow-color);
+        }
+
+        nav a {
+            color: var(--text-color);
+            margin-right: 20px;
+            text-decoration: none;
+            transition: color 0.3s;
+        }
+
+        nav a:hover {
+            color: var(--accent-color);
+        }
+
+        /* Alerts */
+        .alert {
+            padding: 15px;
+            border-radius: 4px;
+            margin-bottom: 20px;
+            background-color: var(--card-background);
+            border: 1px solid var(--border-color);
+            color: var(--text-color);
+        }
+
+        .alert-success {
+            border-color: #4caf50;
+            color: #4caf50;
+        }
+
+        .alert-error {
+            border-color: #f44336;
+            color: #f44336;
+        }
+
+        .alert-warning {
+            border-color: #ff9800;
+            color: #ff9800;
+        }
+
+        /* Back to Top Button */
+        .back-to-top {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background-color: var(--accent-color);
+            color: var(--secondary-color);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            opacity: 0;
+            visibility: hidden;
+            transition: all 0.3s ease;
+            z-index: 1000;
+        }
+
+        .back-to-top.show {
+            opacity: 1;
+            visibility: visible;
+        }
+
+        .back-to-top:hover {
+            transform: translateY(-5px);
+            background-color: var(--primary-color);
+        }
+
+        /* Translation Toggle Button */
+        .translation-toggle {
+            background: var(--card-background);
+            border: 1px solid var(--border-color);
+            cursor: pointer;
+            padding: 8px 16px;
+            border-radius: 6px;
+            color: var(--text-color);
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-weight: 500;
+            margin-right: 15px;
+            box-shadow: 0 2px 4px var(--shadow-color);
+            height: 38px; /* Match navbar height */
+        }
+
+        .translation-toggle:hover {
+            background-color: var(--accent-color);
+            color: var(--secondary-color);
+            transform: translateY(-1px);
+            box-shadow: 0 4px 8px var(--shadow-color);
+        }
+
+        .translation-toggle i {
+            font-size: 1.1rem;
+        }
+
+        .translation-toggle.active {
+            background-color: var(--accent-color);
+            color: var(--secondary-color);
+            border-color: var(--accent-color);
+        }
+
+        /* Text Translator Styles */
+        .text-translator {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: var(--card-background);
+            border-radius: 12px;
+            box-shadow: 0 8px 24px var(--shadow-color);
+            width: 90%;
+            max-width: 600px;
+            z-index: 1000;
+            border: 1px solid var(--border-color);
+            transition: all 0.3s ease;
+            opacity: 0;
+            visibility: hidden;
+        }
+
+        .text-translator.translator-visible {
+            opacity: 1;
+            visibility: visible;
+        }
+
+        .translator-header {
+            padding: 16px 20px;
+            border-bottom: 1px solid var(--border-color);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: var(--card-background);
+            border-radius: 12px 12px 0 0;
+        }
+
+        .translator-title h3 {
+            margin: 0;
+            font-size: 1.2rem;
+            color: var(--text-color);
+            font-weight: 600;
+        }
+
+        .translator-controls {
+            display: flex;
+            gap: 8px;
+        }
+
+        .translator-controls button {
+            background: none;
+            border: none;
+            color: var(--text-color);
+            cursor: pointer;
+            padding: 6px;
+            border-radius: 4px;
+            transition: all 0.2s ease;
+        }
+
+        .translator-controls button:hover {
+            background: var(--border-color);
+            color: var(--accent-color);
+        }
+
+        .translator-container {
+            padding: 20px;
+        }
+
+        .translator-input textarea {
+            width: 100%;
+            min-height: 120px;
+            padding: 12px;
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            background: var(--input-background);
+            color: var(--text-color);
+            font-size: 1rem;
+            resize: vertical;
+            transition: all 0.3s ease;
+        }
+
+        .translator-input textarea:focus {
+            border-color: var(--accent-color);
+            box-shadow: 0 0 0 2px rgba(255, 140, 0, 0.1);
+            outline: none;
+        }
+
+        .translator-output {
+            margin-top: 16px;
+            padding: 16px;
+            background: var(--input-background);
+            border-radius: 8px;
+            border: 1px solid var(--border-color);
+        }
+
+        .translated-text {
+            color: var(--text-color);
+            font-size: 1rem;
+            line-height: 1.5;
+            min-height: 60px;
+        }
+
+        .translation-info {
+            margin-top: 12px;
+            font-size: 0.9rem;
+            color: var(--text-color);
+            opacity: 0.8;
+        }
+
+        /* Overlay when translator is open */
+        .translator-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.5);
+            z-index: 999;
+            opacity: 0;
+            visibility: hidden;
+            transition: all 0.3s ease;
+        }
+
+        .translator-overlay.visible {
+            opacity: 1;
+            visibility: visible;
+        }
+    </style>
+</head>
+<body>
+    <!-- Theme Toggle Button -->
+    <button class="theme-toggle" id="themeToggle" aria-label="Toggle theme">
+        <i class="fas fa-sun"></i>
+    </button>
+
+    <!-- Loading Animation -->
+    <div class="loading" id="loading">
+        <div class="loading-spinner"></div>
+    </div>
+
+    <nav class="navbar navbar-expand-lg">
+        <div class="container">
+            <a class="navbar-brand" href="{% url 'home' %}">MasterTeach</a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav me-auto">
+                    <li class="nav-item">
+                        <a class="nav-link" href="{% url 'films:film_list' %}">Films</a>
+                    </li>
+                </ul>
+                <ul class="navbar-nav align-items-center">
+                    <li class="nav-item">
+                        <button class="translation-toggle" id="translationToggle" aria-label="Toggle translation">
+                            <i class="fas fa-language"></i>
+                            <span>Translate</span>
+                        </button>
+                    </li>
+                    {% if user.is_authenticated %}
+                        <li class="nav-item">
+                            <a class="nav-link" href="{% url 'profiles:profile_view' username=user.username %}">My Profile</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="{% url 'logout' %}">Logout</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="{% url 'films:notifications' %}">
+                                Notifications
+                                {% if user.is_authenticated %}
+                                    {% with unread_count=user.notifications.filter.count %}
+                                        {% if unread_count > 0 %}
+                                            <span id="notification-badge" class="badge bg-danger">{{ unread_count }}</span>
+                                        {% else %}
+                                            <span id="notification-badge" class="badge bg-danger" style="display: none;">0</span>
+                                        {% endif %}
+                                    {% endwith %}
+                                {% endif %}
+                            </a>
+                        </li>
+                    {% else %}
+                        <li class="nav-item">
+                            <a class="nav-link" href="{% url 'login' %}">Login</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="{% url 'signup' %}">Register</a>
+                        </li>
+                    {% endif %}
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container">
+        {% if messages %}
+            {% for message in messages %}
+                <div class="alert alert-{{ message.tags }}">
+                    {{ message }}
+                </div>
+            {% endfor %}
+        {% endif %}
+
+        {% block content %}{% endblock %}
+    </div>
+
+    <!-- Back to Top Button -->
+    <button id="backToTop" class="back-to-top">
+        <i class="fas fa-arrow-up"></i>
+    </button>
+
+    <script>
+        // Theme toggle functionality
+        document.addEventListener('DOMContentLoaded', function() {
+            const themeToggle = document.getElementById('themeToggle');
+            const icon = themeToggle.querySelector('i');
+            
+            // Check for saved theme preference
+            const savedTheme = localStorage.getItem('theme');
+            if (savedTheme) {
+                document.documentElement.setAttribute('data-theme', savedTheme);
+                updateIcon(savedTheme);
+            } else {
+                // Check system preference
+                const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+                const theme = prefersDark ? 'dark' : 'light';
+                document.documentElement.setAttribute('data-theme', theme);
+                localStorage.setItem('theme', theme);
+                updateIcon(theme);
+            }
+
+            // Toggle theme on button click
+            themeToggle.addEventListener('click', function() {
+                const currentTheme = document.documentElement.getAttribute('data-theme');
+                const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
+                
+                document.documentElement.setAttribute('data-theme', newTheme);
+                localStorage.setItem('theme', newTheme);
+                updateIcon(newTheme);
+            });
+
+            // Update icon based on theme
+            function updateIcon(theme) {
+                icon.className = theme === 'dark' ? 'fas fa-moon' : 'fas fa-sun';
+            }
+
+            // Listen for system theme changes
+            window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', e => {
+                if (!localStorage.getItem('theme')) {
+                    const theme = e.matches ? 'dark' : 'light';
+                    document.documentElement.setAttribute('data-theme', theme);
+                    updateIcon(theme);
+                }
+            });
+
+            // Back to Top Button
+            const backToTop = document.getElementById('backToTop');
+            
+            window.addEventListener('scroll', () => {
+                if (window.pageYOffset > 100) {
+                    backToTop.classList.add('show');
+                } else {
+                    backToTop.classList.remove('show');
+                }
+            });
+
+            backToTop.addEventListener('click', () => {
+                window.scrollTo({
+                    top: 0,
+                    behavior: 'smooth'
+                });
+            });
+
+            // Loading Animation
+            window.addEventListener('load', function() {
+                const loading = document.getElementById('loading');
+                loading.style.opacity = '0';
+                setTimeout(() => {
+                    loading.style.display = 'none';
+                }, 500);
+            });
+
+            // Translation Toggle functionality
+            const translationToggle = document.getElementById('translationToggle');
+            const textTranslator = document.querySelector('.text-translator');
+            
+            // Check for saved translation state
+            const savedTranslationState = localStorage.getItem('translationEnabled');
+            if (savedTranslationState === 'true') {
+                textTranslator.style.display = 'block';
+                translationToggle.classList.add('active');
+            } else {
+                textTranslator.style.display = 'none';
+                translationToggle.classList.remove('active');
+            }
+
+            // Toggle translation on button click
+            translationToggle.addEventListener('click', function() {
+                const isVisible = textTranslator.style.display === 'block';
+                textTranslator.style.display = isVisible ? 'none' : 'block';
+                translationToggle.classList.toggle('active');
+                localStorage.setItem('translationEnabled', !isVisible);
+            });
+
+            // Remove the auto-hide functionality
+            document.removeEventListener('click', function(e) {
+                const translateBtn = document.querySelector('.nav-translate-button');
+                if (!textTranslator.contains(e.target) && !translateBtn.contains(e.target)) {
+                    textTranslator.style.display = 'none';
+                }
+            });
+        });
+    </script>
+    <!-- Base JavaScript -->
+    <script src="{% static 'js/main.js' %}"></script>
+    <!-- User JavaScript -->
+    <script src="{% static 'js/user.js' %}"></script>
+    <!-- App-specific JavaScript -->
+    {% block extra_js %}{% endblock %}
+    <!-- Add language switcher and text translator scripts before closing body tag -->
+    <script src="{% static 'js/components/LanguageSwitcher.js' %}"></script>
+    <script src="{% static 'js/components/TextTranslator.js' %}"></script>
+</body>
+</html>  

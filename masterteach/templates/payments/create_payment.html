@@ -1,0 +1,177 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block content %}
+<div class="container mt-5">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card">
+                <div class="card-header">
+                    <h3 class="text-center">Create Payment</h3>
+                    {% if is_premium %}
+                    <div class="text-center text-success">
+                        <i class="fas fa-crown"></i> Premium User
+                    </div>
+                    {% endif %}
+                </div>
+                <div class="card-body">
+                    {% if messages %}
+                        {% for message in messages %}
+                            <div class="alert alert-{{ message.tags }}">
+                                {{ message }}
+                            </div>
+                        {% endfor %}
+                    {% endif %}
+
+                    <form method="POST" id="paymentForm" data-is-premium="{% if is_premium %}true{% else %}false{% endif %}">
+                        {% csrf_token %}
+                        <div class="form-group mb-3">
+                            <label for="payment_type">Payment Type</label>
+                            <select class="form-control" id="payment_type" name="payment_type" required>
+                                <option value="">Select Payment Type</option>
+                                <option value="film_purchase">Film Purchase</option>
+                                <option value="premium_subscription">Premium Subscription ($4.50/month)</option>
+                            </select>
+                        </div>
+
+                        <div class="form-group mb-3" id="filmSection" style="display: none;">
+                            <label for="film_id">Select Film</label>
+                            <select class="form-control" id="film_id" name="film_id">
+                                <option value="">Select a Film</option>
+                                {% for film in films %}
+                                    <option value="{{ film.id }}">{{ film.title }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+
+                        <div class="form-group mb-3" id="deliverySection" style="display: none;">
+                            <label>Delivery Options</label>
+                            <div class="card">
+                                <div class="card-body">
+                                    <div class="form-check mb-2">
+                                        <input class="form-check-input" type="radio" name="delivery_type" id="standard_delivery" value="standard" checked>
+                                        <label class="form-check-label" for="standard_delivery">
+                                            Standard Delivery (24 hours)
+                                        </label>
+                                    </div>
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="radio" name="delivery_type" id="fast_delivery" value="fast">
+                                        <label class="form-check-label" for="fast_delivery">
+                                            Fast Delivery (3-4 hours) - Additional $0.50
+                                        </label>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="payment_method">Payment Method</label>
+                            <select class="form-control" id="payment_method" name="payment_method" required>
+                                <option value="coinbase">Credit Card (Coinbase)</option>
+                                <option value="tron">TRON (TRX) - 1% fee</option>
+                            </select>
+                            <small class="form-text text-muted">
+                                TRON payments have lower fees (1%) compared to credit card payments (3.5%)
+                            </small>
+                        </div>
+
+                        <div class="card mb-3" id="priceSummary" style="display: none;">
+                            <div class="card-body">
+                                <h5>Price Summary</h5>
+                                <div id="basePrice"></div>
+                                <div id="deliveryPrice"></div>
+                                <hr>
+                                <div id="totalPrice" class="font-weight-bold"></div>
+                            </div>
+                        </div>
+
+                        <div class="text-center mt-4">
+                            <button type="submit" class="btn btn-primary">Proceed to Payment</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const paymentTypeSelect = document.getElementById('payment_type');
+    const filmSection = document.getElementById('filmSection');
+    const deliverySection = document.getElementById('deliverySection');
+    const priceSummary = document.getElementById('priceSummary');
+    const basePrice = document.getElementById('basePrice');
+    const deliveryPrice = document.getElementById('deliveryPrice');
+    const totalPrice = document.getElementById('totalPrice');
+    const isPremium = document.getElementById('paymentForm').dataset.isPremium === 'true';
+
+    function updatePriceSummary() {
+        const filmSelected = document.getElementById('film_id').value;
+        const deliveryType = document.querySelector('input[name="delivery_type"]:checked').value;
+        
+        if (paymentTypeSelect.value === 'premium_subscription') {
+            basePrice.textContent = 'Premium Subscription: $4.50';
+            deliveryPrice.textContent = '';
+            totalPrice.textContent = 'Total: $4.50';
+            priceSummary.style.display = 'block';
+        } else if (filmSelected) {
+            const baseAmount = isPremium ? 0.50 : 1.00;
+            const deliveryAmount = deliveryType === 'fast' ? 0.50 : 0;
+            const total = baseAmount + deliveryAmount;
+            
+            basePrice.textContent = `Film Purchase: $${baseAmount.toFixed(2)}`;
+            if (deliveryAmount > 0) {
+                deliveryPrice.textContent = `Fast Delivery: $${deliveryAmount.toFixed(2)}`;
+            } else {
+                deliveryPrice.textContent = '';
+            }
+            totalPrice.textContent = `Total: $${total.toFixed(2)}`;
+            priceSummary.style.display = 'block';
+        } else {
+            priceSummary.style.display = 'none';
+        }
+    }
+
+    paymentTypeSelect.addEventListener('change', function() {
+        if (this.value === 'film_purchase') {
+            filmSection.style.display = 'block';
+            deliverySection.style.display = 'block';
+        } else {
+            filmSection.style.display = 'none';
+            deliverySection.style.display = 'none';
+        }
+        updatePriceSummary();
+    });
+
+    document.getElementById('film_id').addEventListener('change', updatePriceSummary);
+    document.querySelectorAll('input[name="delivery_type"]').forEach(radio => {
+        radio.addEventListener('change', updatePriceSummary);
+    });
+
+    const form = document.getElementById('paymentForm');
+    form.addEventListener('submit', function(e) {
+        e.preventDefault();
+        
+        const formData = new FormData(form);
+        
+        fetch('{% url "payments:create_payment" %}', {
+            method: 'POST',
+            body: formData,
+            headers: {
+                'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.hosted_url) {
+                window.location.href = data.hosted_url;
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+        });
+    });
+});
+</script>
+{% endblock %} 

@@ -1,0 +1,80 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block meta %}
+<meta name="description" content="Edit your profile settings">
+<meta name="keywords" content="profile settings, avatar, language learning">
+{% endblock %}
+
+{% block title %}Edit Profile{% endblock %}
+
+{% block content %}
+<div class="container py-5">
+    <div class="row justify-content-center">
+        <div class="col-md-8 col-lg-6">
+            <div class="card shadow-sm">
+                <div class="card-body">
+                    <h1 class="h3 mb-4">Edit Profile</h1>
+                    
+                    <form method="post" enctype="multipart/form-data" class="needs-validation" novalidate>
+                        {% csrf_token %}
+                        
+                        <div class="mb-4">
+                            <label for="{{ form.avatar.id_for_label }}" class="form-label">Profile Picture</label>
+                            <div class="d-flex align-items-center mb-3">
+                                <img src="{{ profile.avatar.url|default:'/static/images/default-avatar.svg' }}" 
+                                     alt="Current avatar"
+                                     class="rounded-circle me-3"
+                                     style="width: 100px; height: 100px; object-fit: cover;"
+                                     onerror="this.src='/static/images/default-avatar.svg'">
+                                <div>
+                                    <p class="text-muted mb-2">Upload a new profile picture</p>
+                                    <input type="file" 
+                                           name="{{ form.avatar.name }}" 
+                                           id="{{ form.avatar.id_for_label }}"
+                                           class="form-control"
+                                           accept="image/*">
+                                    {% if form.avatar.errors %}
+                                    <div class="invalid-feedback d-block">
+                                        {{ form.avatar.errors }}
+                                    </div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="d-grid gap-2">
+                            <button type="submit" class="btn btn-primary">
+                                Save Changes
+                            </button>
+                            <a href="{% url 'profiles:profile_view' user.username %}" class="btn btn-outline-secondary">
+                                Cancel
+                            </a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Preview uploaded image
+    const avatarInput = document.querySelector('input[type="file"]');
+    const avatarPreview = document.querySelector('img[alt="Current avatar"]');
+    
+    avatarInput.addEventListener('change', function() {
+        if (this.files && this.files[0]) {
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                avatarPreview.src = e.target.result;
+            };
+            reader.readAsDataURL(this.files[0]);
+        }
+    });
+});
+</script>
+{% endblock %} 

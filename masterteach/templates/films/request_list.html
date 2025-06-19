@@ -1,0 +1,73 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}{% if user.is_superuser %}All Film Requests{% else %}My Film Requests{% endif %}{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1>{% if user.is_superuser %}All Film Requests{% else %}My Film Requests{% endif %}</h1>
+        {% if not user.is_superuser %}
+            <a href="{% url 'films:film_list' %}" class="btn btn-primary">
+                <i class="fas fa-search"></i> Search Films
+            </a>
+        {% endif %}
+    </div>
+
+    {% if requests %}
+        <div class="row">
+            {% for request in requests %}
+                <div class="col-md-4 mb-4">
+                    <div class="card h-100">
+                        {% if request.tmdb_poster_path %}
+                            <img src="{{ request.get_tmdb_poster_url }}" class="card-img-top" alt="{{ request.tmdb_title }}">
+                        {% else %}
+                            <div class="card-img-top bg-light d-flex align-items-center justify-content-center" style="height: 300px;">
+                                <i class="fas fa-film fa-3x text-muted"></i>
+                            </div>
+                        {% endif %}
+                        <div class="card-body">
+                            <h5 class="card-title">{{ request.tmdb_title }}</h5>
+                            <p class="card-text text-muted">
+                                {% if user.is_superuser %}
+                                    <small>Requested by {{ request.user.username }}</small><br>
+                                {% endif %}
+                                <small>Requested on {{ request.created_at|date:"F j, Y" }}</small>
+                            </p>
+                            <div class="mb-2">
+                                <span class="badge {% if request.status == 'pending' %}bg-warning{% elif request.status == 'approved' %}bg-success{% elif request.status == 'rejected' %}bg-danger{% else %}bg-info{% endif %}">
+                                    {{ request.status|title }}
+                                </span>
+                            </div>
+                            {% if request.notes %}
+                                <p class="card-text">{{ request.notes }}</p>
+                            {% endif %}
+                        </div>
+                        <div class="card-footer">
+                            <a href="{% url 'films:request_detail' request.id %}" class="btn btn-outline-primary btn-sm">
+                                View Details
+                            </a>
+                            {% if user.is_superuser and request.status == 'pending' %}
+                                <div class="mt-2">
+                                    <a href="{% url 'films:upload_video' %}?tmdb_id={{ request.tmdb_id }}" class="btn btn-success btn-sm">
+                                        <i class="fas fa-upload"></i> Upload Film
+                                    </a>
+                                </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            {% endfor %}
+        </div>
+    {% else %}
+        <div class="alert alert-info">
+            {% if user.is_superuser %}
+                <i class="fas fa-info-circle"></i> No film requests have been made yet.
+            {% else %}
+                <i class="fas fa-info-circle"></i> You haven't made any film requests yet.
+                <a href="{% url 'films:film_list' %}" class="alert-link">Search for films</a> to make a request.
+            {% endif %}
+        </div>
+    {% endif %}
+</div>
+{% endblock %} 

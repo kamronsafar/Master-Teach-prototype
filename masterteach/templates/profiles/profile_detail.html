@@ -1,0 +1,198 @@
+{% extends 'base.html' %}
+{% load static %}
+{% load profile_extras %}
+
+{% block meta %}
+<meta name="description" content="{{ profile.user.username }}'s language learning profile and progress">
+<meta name="keywords" content="language learning, profile, CEFR levels, watched films">
+{% endblock %}
+
+{% block title %}{{ profile.user.username }}'s Profile{% endblock %}
+
+{% block content %}
+<div class="container py-5">
+    <div class="row">
+        <!-- Profile Info -->
+        <div class="col-md-4 mb-4">
+            <div class="card shadow-sm">
+                <div class="card-body text-center">
+                    <h1 class="h3 mb-2">{{ profile.user.username }}</h1>
+                    <p class="text-muted mb-3">
+                        Joined {{ profile.created_at|date:"F Y" }}
+                    </p>
+                    
+                    {% if user == profile.user %}
+                    <a href="{% url 'profiles:profile_edit' %}" class="btn btn-outline-primary">
+                        <i class="fas fa-edit me-2"></i>Edit Profile
+                    </a>
+                    {% endif %}
+                </div>
+            </div>
+            
+            <!-- CEFR Stats -->
+            {% with stats=profile.user.cefr_stats %}
+            {% if stats %}
+            <div class="card shadow-sm mt-4">
+                <div class="card-body">
+                    <h2 class="h5 mb-3">CEFR Progress</h2>
+                    <div class="mb-3">
+                        <div class="d-flex justify-content-between mb-1">
+                            <span>A1-A2 (Beginner)</span>
+                            <span>{{ stats.a1_count|add:stats.a2_count }}</span>
+                        </div>
+                        <div class="progress" style="height: 8px;">
+                            {% with total=stats.a1_count|add:stats.a2_count|add:stats.b1_count|add:stats.b2_count|add:stats.c1_count|add:stats.c2_count %}
+                            {% if total > 0 %}
+                            <div class="progress-bar bg-success" role="progressbar" 
+                                 style="width: {{ stats.a1_count|add:stats.a2_count|div:total|mul:100 }}%"
+                                 aria-label="A1-A2 Progress"></div>
+                            {% endif %}
+                            {% endwith %}
+                        </div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <div class="d-flex justify-content-between mb-1">
+                            <span>B1-B2 (Intermediate)</span>
+                            <span>{{ stats.b1_count|add:stats.b2_count }}</span>
+                        </div>
+                        <div class="progress" style="height: 8px;">
+                            {% with total=stats.a1_count|add:stats.a2_count|add:stats.b1_count|add:stats.b2_count|add:stats.c1_count|add:stats.c2_count %}
+                            {% if total > 0 %}
+                            <div class="progress-bar bg-info" role="progressbar" 
+                                 style="width: {{ stats.b1_count|add:stats.b2_count|div:total|mul:100 }}%"
+                                 aria-label="B1-B2 Progress"></div>
+                            {% endif %}
+                            {% endwith %}
+                        </div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <div class="d-flex justify-content-between mb-1">
+                            <span>C1-C2 (Advanced)</span>
+                            <span>{{ stats.c1_count|add:stats.c2_count }}</span>
+                        </div>
+                        <div class="progress" style="height: 8px;">
+                            {% with total=stats.a1_count|add:stats.a2_count|add:stats.b1_count|add:stats.b2_count|add:stats.c1_count|add:stats.c2_count %}
+                            {% if total > 0 %}
+                            <div class="progress-bar bg-warning" role="progressbar" 
+                                 style="width: {{ stats.c1_count|add:stats.c2_count|div:total|mul:100 }}%"
+                                 aria-label="C1-C2 Progress"></div>
+                            {% endif %}
+                            {% endwith %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+            {% endwith %}
+        </div>
+        
+        <!-- Watched Films -->
+        <div class="col-md-8">
+            <div class="card shadow-sm mb-4">
+                <div class="card-body">
+                    <h2 class="h4 mb-3">Watched Films</h2>
+                    
+                    {% if watched_films %}
+                    <div class="row row-cols-1 row-cols-md-2 g-4">
+                        {% for watched in watched_films %}
+                        <div class="col">
+                            <div class="card h-100">
+                                <div class="card-body">
+                                    <h3 class="h6 card-title">
+                                        <a href="{% url 'films:film_detail' watched.film.slug %}" 
+                                           class="text-decoration-none">
+                                            {{ watched.film.title }}
+                                        </a>
+                                    </h3>
+                                    <p class="card-text text-muted small">
+                                        <span class="badge bg-primary">{{ watched.cefr_level }}</span>
+                                        Watched {{ watched.watched_at|date:"M d, Y" }}
+                                    </p>
+                                    {% if user == profile.user %}
+                                    <button class="btn btn-sm {% if watched.is_favorite %}btn-warning{% else %}btn-outline-warning{% endif %}"
+                                            onclick="toggleFavorite('{{ watched.film.slug }}')"
+                                            data-film-slug="{{ watched.film.slug }}">
+                                        <i class="fas fa-star"></i>
+                                        {% if watched.is_favorite %}Remove from Favorites{% else %}Add to Favorites{% endif %}
+                                    </button>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                    
+                    {% if is_paginated %}
+                    <nav class="mt-4" aria-label="Watched films pagination">
+                        <ul class="pagination justify-content-center">
+                            {% if page_obj.has_previous %}
+                            <li class="page-item">
+                                <a class="page-link" href="?page={{ page_obj.previous_page_number }}" aria-label="Previous">
+                                    <span aria-hidden="true">&laquo;</span>
+                                </a>
+                            </li>
+                            {% endif %}
+                            
+                            {% for num in page_obj.paginator.page_range %}
+                            <li class="page-item {% if page_obj.number == num %}active{% endif %}">
+                                <a class="page-link" href="?page={{ num }}">{{ num }}</a>
+                            </li>
+                            {% endfor %}
+                            
+                            {% if page_obj.has_next %}
+                            <li class="page-item">
+                                <a class="page-link" href="?page={{ page_obj.next_page_number }}" aria-label="Next">
+                                    <span aria-hidden="true">&raquo;</span>
+                                </a>
+                            </li>
+                            {% endif %}
+                        </ul>
+                    </nav>
+                    {% endif %}
+                    
+                    {% else %}
+                    <div class="alert alert-info">
+                        No films watched yet.
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function toggleFavorite(filmSlug) {
+    const button = document.querySelector(`button[data-film-slug="${filmSlug}"]`);
+    const icon = button.querySelector('i');
+    const text = button.textContent.trim();
+    
+    fetch(`/profiles/toggle-favorite/${filmSlug}/`, {
+        method: 'POST',
+        headers: {
+            'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value,
+        },
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.is_favorite) {
+            button.classList.remove('btn-outline-warning');
+            button.classList.add('btn-warning');
+            button.innerHTML = '<i class="fas fa-star"></i> Remove from Favorites';
+        } else {
+            button.classList.remove('btn-warning');
+            button.classList.add('btn-outline-warning');
+            button.innerHTML = '<i class="fas fa-star"></i> Add to Favorites';
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        alert('An error occurred while updating favorites.');
+    });
+}
+</script>
+{% endblock %} 

@@ -1,0 +1,243 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block content %}
+<div class="container mt-5">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card">
+                <div class="card-header">
+                    <h3 class="mb-0">Request a Film</h3>
+                </div>
+                <div class="card-body">
+                    {% if not user.premiumsubscription.is_active %}
+                    <div class="alert alert-info mb-4">
+                        <h5 class="alert-heading">Free User Limits</h5>
+                        <p>As a free user, you can watch one film every 3 days.</p>
+                        <p>Next available film: <strong>{{ next_available_date|date:"M d, Y" }}</strong></p>
+                        <hr>
+                        <p class="mb-0">
+                            <a href="{% url 'payments:premium_subscription' %}" class="btn btn-primary btn-sm">
+                                Upgrade to Premium
+                            </a>
+                        </p>
+                    </div>
+                    {% endif %}
+
+                    <form method="POST" id="requestForm">
+                        {% csrf_token %}
+                        
+                        <div class="form-group mb-3">
+                            <label for="title">Film Title</label>
+                            <input type="text" class="form-control" id="title" name="title" required>
+                        </div>
+
+                        <div class="form-group mb-3">
+                            <label for="tmdb_id">TMDB ID (Optional)</label>
+                            <input type="number" class="form-control" id="tmdb_id" name="tmdb_id">
+                            <small class="form-text text-muted">You can find this on The Movie Database website</small>
+                        </div>
+
+                        <div class="form-group mb-3">
+                            <label for="notes">Additional Notes</label>
+                            <textarea class="form-control" id="notes" name="notes" rows="3"></textarea>
+                        </div>
+
+                        <div class="card mb-3">
+                            <div class="card-header">
+                                <h5 class="mb-0">Delivery Options</h5>
+                            </div>
+                            <div class="card-body">
+                                <div class="form-check mb-2">
+                                    <input class="form-check-input" type="radio" name="delivery_type" id="standard_delivery" value="standard" checked>
+                                    <label class="form-check-label" for="standard_delivery">
+                                        Standard Delivery (24 hours) - 
+                                        {% if user.premiumsubscription and user.premiumsubscription.is_active %}
+                                        $0.50
+                                        {% else %}
+                                        $1.00
+                                        {% endif %}
+                                    </label>
+                                </div>
+                                <div class="form-check">
+                                    <input class="form-check-input" type="radio" name="delivery_type" id="fast_delivery" value="fast">
+                                    <label class="form-check-label" for="fast_delivery">
+                                        Fast Delivery (3-4 hours) - Additional $0.50
+                                    </label>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="card mb-3" id="priceSummary">
+                            <div class="card-body">
+                                <h5>Price Summary</h5>
+                                <div id="basePrice"></div>
+                                <div id="deliveryPrice"></div>
+                                <div id="processingFee"></div>
+                                <hr>
+                                <div id="totalPrice" class="font-weight-bold"></div>
+                            </div>
+                        </div>
+
+                        <div class="form-group mb-4">
+                            <label class="form-label">Select Payment Method</label>
+                            <div class="payment-methods">
+                                <div class="form-check mb-2">
+                                    <input class="form-check-input" type="radio" name="payment_method" id="card_payment" value="card" checked>
+                                    <label class="form-check-label" for="card_payment">
+                                        <i class="fab fa-cc-visa"></i> <i class="fab fa-cc-mastercard"></i> Credit/Debit Card
+                                        <small class="text-muted d-block">3.5% processing fee</small>
+                                    </label>
+                                </div>
+                                <div class="form-check mb-2">
+                                    <input class="form-check-input" type="radio" name="payment_method" id="tron_payment" value="tron">
+                                    <label class="form-check-label" for="tron_payment">
+                                        <i class="fab fa-bitcoin"></i> TRON (TRX)
+                                        <small class="text-muted d-block">1% processing fee</small>
+                                    </label>
+                                </div>
+                                <div class="form-check">
+                                    <input class="form-check-input" type="radio" name="payment_method" id="telegram_payment" value="telegram">
+                                    <label class="form-check-label" for="telegram_payment">
+                                        <i class="fab fa-telegram"></i> Telegram Wallet
+                                        <small class="text-muted d-block">1% processing fee</small>
+                                    </label>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div id="cardDetails" class="mb-4">
+                            <div class="row">
+                                <div class="col-md-6 mb-3">
+                                    <label for="cardNumber" class="form-label">Card Number</label>
+                                    <input type="text" class="form-control" id="cardNumber" name="card_number" placeholder="1234 5678 9012 3456">
+                                </div>
+                                <div class="col-md-3 mb-3">
+                                    <label for="expiryDate" class="form-label">Expiry Date</label>
+                                    <input type="text" class="form-control" id="expiryDate" name="expiry_date" placeholder="MM/YY">
+                                </div>
+                                <div class="col-md-3 mb-3">
+                                    <label for="cvv" class="form-label">CVV</label>
+                                    <input type="text" class="form-control" id="cvv" name="cvv" placeholder="123">
+                                </div>
+                            </div>
+                        </div>
+
+                        <div id="cryptoDetails" class="mb-4" style="display: none;">
+                            <div class="alert alert-info">
+                                <h5 class="alert-heading">Crypto Payment Instructions</h5>
+                                <p>Please send the exact amount to the following address:</p>
+                                <div class="input-group mb-2">
+                                    <input type="text" class="form-control" id="cryptoAddress" readonly>
+                                    <button class="btn btn-outline-secondary" type="button" onclick="copyCryptoAddress()">
+                                        <i class="fas fa-copy"></i>
+                                    </button>
+                                </div>
+                                <small class="text-muted">Make sure to include the reference number in the payment memo.</small>
+                            </div>
+                        </div>
+
+                        <div class="text-center mt-4">
+                            <button type="submit" class="btn btn-primary">Submit Request</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const isPremium = {% if user.premiumsubscription and user.premiumsubscription.is_active %}true{% else %}false{% endif %};
+    const basePrice = document.getElementById('basePrice');
+    const deliveryPrice = document.getElementById('deliveryPrice');
+    const processingFee = document.getElementById('processingFee');
+    const totalPrice = document.getElementById('totalPrice');
+    const priceSummary = document.getElementById('priceSummary');
+    const paymentMethods = document.querySelectorAll('input[name="payment_method"]');
+    const cardDetails = document.getElementById('cardDetails');
+    const cryptoDetails = document.getElementById('cryptoDetails');
+
+    function updatePriceSummary() {
+        const deliveryType = document.querySelector('input[name="delivery_type"]:checked').value;
+        const paymentMethod = document.querySelector('input[name="payment_method"]:checked').value;
+        const baseAmount = isPremium ? 0.50 : 1.00;
+        const deliveryAmount = deliveryType === 'fast' ? 0.50 : 0;
+        const processingFeeRate = paymentMethod === 'card' ? 0.035 : 0.01;
+        const subtotal = baseAmount + deliveryAmount;
+        const fee = subtotal * processingFeeRate;
+        const total = subtotal + fee;
+        
+        basePrice.textContent = `Base Price: $${baseAmount.toFixed(2)}`;
+        if (deliveryAmount > 0) {
+            deliveryPrice.textContent = `Fast Delivery: $${deliveryAmount.toFixed(2)}`;
+        } else {
+            deliveryPrice.textContent = '';
+        }
+        processingFee.textContent = `Processing Fee (${(processingFeeRate * 100).toFixed(1)}%): $${fee.toFixed(2)}`;
+        totalPrice.textContent = `Total: $${total.toFixed(2)}`;
+        priceSummary.style.display = 'block';
+    }
+
+    document.querySelectorAll('input[name="delivery_type"]').forEach(radio => {
+        radio.addEventListener('change', updatePriceSummary);
+    });
+
+    paymentMethods.forEach(method => {
+        method.addEventListener('change', function() {
+            if (this.value === 'card') {
+                cardDetails.style.display = 'block';
+                cryptoDetails.style.display = 'none';
+            } else {
+                cardDetails.style.display = 'none';
+                cryptoDetails.style.display = 'block';
+            }
+            updatePriceSummary();
+        });
+    });
+
+    // Format card number input
+    const cardNumber = document.getElementById('cardNumber');
+    cardNumber.addEventListener('input', function(e) {
+        let value = e.target.value.replace(/\D/g, '');
+        let formattedValue = '';
+        for (let i = 0; i < value.length; i++) {
+            if (i > 0 && i % 4 === 0) {
+                formattedValue += ' ';
+            }
+            formattedValue += value[i];
+        }
+        e.target.value = formattedValue;
+    });
+
+    // Format expiry date input
+    const expiryDate = document.getElementById('expiryDate');
+    expiryDate.addEventListener('input', function(e) {
+        let value = e.target.value.replace(/\D/g, '');
+        if (value.length > 2) {
+            value = value.slice(0, 2) + '/' + value.slice(2, 4);
+        }
+        e.target.value = value;
+    });
+
+    // Format CVV input
+    const cvv = document.getElementById('cvv');
+    cvv.addEventListener('input', function(e) {
+        e.target.value = e.target.value.replace(/\D/g, '').slice(0, 3);
+    });
+
+    // Initial price update
+    updatePriceSummary();
+});
+
+function copyCryptoAddress() {
+    const cryptoAddress = document.getElementById('cryptoAddress');
+    cryptoAddress.select();
+    document.execCommand('copy');
+    alert('Address copied to clipboard!');
+}
+</script>
+{% endblock %}
+{% endblock %} 

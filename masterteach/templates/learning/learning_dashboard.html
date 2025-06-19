@@ -1,0 +1,201 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Learning Dashboard - MasterTeach{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <!-- Breadcrumb -->
+    <nav aria-label="breadcrumb">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a href="{% url 'user:home' %}">Home</a></li>
+            <li class="breadcrumb-item active" aria-current="page">Learning Dashboard</li>
+        </ol>
+    </nav>
+
+    <div class="row mb-4">
+        <div class="col-md-8">
+            <h1>Learning Dashboard</h1>
+            <p class="text-muted">Track your language learning progress</p>
+        </div>
+    </div>
+
+    <!-- Progress Overview -->
+    <div class="row mb-4">
+        <div class="col-md-12">
+            <div class="card">
+                <div class="card-body">
+                    <h5 class="card-title">Overall Progress</h5>
+                    <div class="row">
+                        {% for level in cefr_levels %}
+                        <div class="col-md-4 mb-3">
+                            <h6 id="level-{{ level.name|slugify }}">{{ level.name }}</h6>
+                            <div class="progress" role="progressbar" 
+                                 aria-labelledby="level-{{ level.name|slugify }}"
+                                 aria-valuenow="{{ level.progress }}" 
+                                 aria-valuemin="0" 
+                                 aria-valuemax="100">
+                                <div class="progress-bar" 
+                                     style="width: {{ level.progress }}%"
+                                     aria-valuenow="{{ level.progress }}" 
+                                     aria-valuemin="0" 
+                                     aria-valuemax="100">
+                                    <span class="visually-hidden">Progress: </span>{{ level.progress }}%
+                                </div>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Recent Activity -->
+    <div class="row mb-4">
+        <div class="col-md-12">
+            <div class="card">
+                <div class="card-body">
+                    <h5 class="card-title">Recent Activity</h5>
+                    <div id="recent-activity-container">
+                        {% if recent_activity %}
+                        <div class="list-group">
+                            {% for activity in recent_activity %}
+                            <div class="list-group-item">
+                                <div class="d-flex w-100 justify-content-between">
+                                    <h6 class="mb-1">{{ activity.film.title }}</h6>
+                                    <small class="text-muted">{{ activity.timestamp|timesince }} ago</small>
+                                </div>
+                                <p class="mb-1">{{ activity.description }}</p>
+                                <small class="text-muted">CEFR Level: {{ activity.cefr_level }}</small>
+                            </div>
+                            {% endfor %}
+                        </div>
+                        {% else %}
+                        <div class="alert alert-info">
+                            <h5 class="alert-heading">No Recent Activity</h5>
+                            <p>Start watching films to track your progress!</p>
+                            <hr>
+                            <a href="{% url 'films:film_list' %}" class="btn btn-primary" id="browse-films-btn">
+                                Browse Films
+                            </a>
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Learning Goals -->
+    <div class="row">
+        <div class="col-md-12">
+            <div class="card">
+                <div class="card-body">
+                    <h5 class="card-title">Learning Goals</h5>
+                    <div id="learning-goals-container">
+                        {% if learning_goals %}
+                        <div class="list-group">
+                            {% for goal in learning_goals %}
+                            <div class="list-group-item">
+                                <div class="d-flex w-100 justify-content-between">
+                                    <h6 class="mb-1" id="goal-{{ goal.id }}">{{ goal.title }}</h6>
+                                    <small class="text-muted">Due: {{ goal.due_date|date }}</small>
+                                </div>
+                                <p class="mb-1">{{ goal.description }}</p>
+                                <div class="progress mt-2" role="progressbar" 
+                                     aria-labelledby="goal-{{ goal.id }}"
+                                     aria-valuenow="{{ goal.progress }}" 
+                                     aria-valuemin="0" 
+                                     aria-valuemax="100">
+                                    <div class="progress-bar" 
+                                         style="width: {{ goal.progress }}%"
+                                         aria-valuenow="{{ goal.progress }}" 
+                                         aria-valuemin="0" 
+                                         aria-valuemax="100">
+                                        <span class="visually-hidden">Progress: </span>{{ goal.progress }}%
+                                    </div>
+                                </div>
+                            </div>
+                            {% endfor %}
+                        </div>
+                        {% else %}
+                        <div class="alert alert-info">
+                            <h5 class="alert-heading">No Learning Goals</h5>
+                            <p>Set some learning goals to track your progress!</p>
+                            <hr>
+                            <a href="{% url 'learning:set_goals' %}" class="btn btn-primary" id="set-goals-btn">
+                                Set Goals
+                            </a>
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Add error handling for progress bars
+    const progressBars = document.querySelectorAll('.progress-bar');
+    progressBars.forEach(bar => {
+        const progress = parseInt(bar.getAttribute('aria-valuenow'));
+        if (isNaN(progress)) {
+            bar.style.width = '0%';
+            bar.textContent = '0%';
+            bar.classList.add('bg-danger');
+        }
+    });
+
+    // Add loading states for data fetching
+    const links = document.querySelectorAll('a.btn');
+    links.forEach(link => {
+        link.addEventListener('click', function(e) {
+            const originalText = this.innerHTML;
+            this.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Loading...';
+            this.disabled = true;
+            
+            // Re-enable button if navigation fails
+            setTimeout(() => {
+                if (this.disabled) {
+                    this.innerHTML = originalText;
+                    this.disabled = false;
+                }
+            }, 5000);
+        });
+    });
+
+    // Add loading states for containers
+    const containers = {
+        'recent-activity-container': 'Loading recent activity...',
+        'learning-goals-container': 'Loading learning goals...'
+    };
+
+    Object.entries(containers).forEach(([id, message]) => {
+        const container = document.getElementById(id);
+        if (container) {
+            const observer = new MutationObserver((mutations) => {
+                mutations.forEach((mutation) => {
+                    if (mutation.type === 'childList' && !container.querySelector('.list-group, .alert')) {
+                        container.innerHTML = `
+                            <div class="text-center py-4">
+                                <div class="spinner-border text-primary" role="status">
+                                    <span class="visually-hidden">Loading...</span>
+                                </div>
+                                <p class="mt-2">${message}</p>
+                            </div>
+                        `;
+                    }
+                });
+            });
+
+            observer.observe(container, { childList: true });
+        }
+    });
+});
+</script>
+{% endblock %} 

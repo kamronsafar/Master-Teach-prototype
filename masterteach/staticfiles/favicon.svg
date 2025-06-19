@@ -1,0 +1,20 @@
+<?xml version="1.0"?>
+<svg xmlns="http://www.w3.org/2000/svg" id="Layer_1" data-name="Layer 1" viewBox="0 0 2000 2000" style="background-color:transparent;">
+  <defs>
+    <style>.cls-1{stroke:#000;stroke-miterlimit:10;}.cls-2{fill:#f38524;}.cls-3,.cls-4{fill:none;stroke-width:80px;}.cls-3{stroke:#e8e8e8;}.cls-4{stroke:#f7f7f7;}.cls-5{fill:#fff;}.cls-6{fill:#f68524;}.cls-7{fill:#040404;}</style>
+  </defs>
+  <rect class="cls-1" width="2000" height="2000" fill="none"/>
+  <rect class="cls-2" x="1500" y="980" width="160" height="260" rx="80"/>
+  <rect class="cls-2" x="360" y="980" width="160" height="260" rx="80"/>
+  <rect class="cls-3" x="375" y="960" width="180" height="300" rx="80"/>
+  <rect class="cls-4" x="1490" y="960" width="180" height="300" rx="80"/>
+  <rect class="cls-5" x="440" y="700" width="1200" height="800" rx="200"/>
+  <rect x="525" y="785" width="950" height="620" rx="160"/>
+  <circle class="cls-5" cx="775" cy="1090" r="150"/>
+  <circle class="cls-5" cx="1215" cy="1090" r="150"/>
+  <rect class="cls-5" x="995" y="560" width="60" height="180"/>
+  <circle class="cls-5" cx="1025" cy="460" r="140"/>
+  <circle class="cls-6" cx="1025" cy="460" r="70"/>
+  <circle class="cls-7" cx="775" cy="1095" r="70"/>
+  <circle class="cls-7" cx="1215" cy="1095" r="70"/>
+</svg>

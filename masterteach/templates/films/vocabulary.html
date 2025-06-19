@@ -1,0 +1,598 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Vocabulary - {{ film.title }}{% endblock %}
+
+{% block extra_css %}
+<style>
+    .vocabulary-container {
+        max-width: 1200px;
+        margin: 2rem auto;
+        padding: 0 1rem;
+    }
+
+    .search-container {
+        margin-bottom: 2rem;
+    }
+
+    .search-input {
+        width: 100%;
+        padding: 1rem;
+        border: 2px solid #eee;
+        border-radius: 8px;
+        font-size: 1rem;
+        transition: border-color 0.3s ease;
+    }
+
+    .search-input:focus {
+        border-color: #007bff;
+        outline: none;
+    }
+
+    .cefr-tabs {
+        display: flex;
+        gap: 1rem;
+        margin-bottom: 2rem;
+        flex-wrap: wrap;
+    }
+
+    .cefr-tab {
+        padding: 0.75rem 1.5rem;
+        border-radius: 8px;
+        cursor: pointer;
+        font-weight: 600;
+        transition: all 0.3s ease;
+        background: #f8f9fa;
+        border: 2px solid transparent;
+    }
+
+    .cefr-tab.active {
+        background: #007bff;
+        color: white;
+    }
+
+    .cefr-tab:hover:not(.active) {
+        border-color: #007bff;
+        color: #007bff;
+    }
+
+    .vocabulary-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+        gap: 1.5rem;
+        margin-top: 2rem;
+    }
+
+    .word-card {
+        background: white;
+        border-radius: 12px;
+        padding: 1.5rem;
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        transition: transform 0.3s ease;
+        cursor: pointer;
+    }
+
+    .word-card:hover {
+        transform: translateY(-5px);
+    }
+
+    .word-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 1rem;
+    }
+
+    .word-title {
+        font-size: 1.25rem;
+        font-weight: 600;
+        color: #2c3e50;
+    }
+
+    .cefr-badge {
+        padding: 0.25rem 0.75rem;
+        border-radius: 20px;
+        font-size: 0.875rem;
+        font-weight: 600;
+    }
+
+    .cefr-badge.a1 { background: #e3f2fd; color: #1976d2; }
+    .cefr-badge.a2 { background: #e8f5e9; color: #2e7d32; }
+    .cefr-badge.b1 { background: #fff3e0; color: #f57c00; }
+    .cefr-badge.b2 { background: #fce4ec; color: #c2185b; }
+    .cefr-badge.c1 { background: #f3e5f5; color: #7b1fa2; }
+    .cefr-badge.c2 { background: #e8eaf6; color: #3f51b5; }
+
+    .word-definition {
+        color: #666;
+        margin-bottom: 1rem;
+        line-height: 1.5;
+    }
+
+    .word-stats {
+        margin-top: 1rem;
+        padding-top: 1rem;
+        border-top: 1px solid #eee;
+        display: flex;
+        justify-content: space-between;
+        color: #666;
+        font-size: 0.875rem;
+    }
+
+    .pagination {
+        display: flex;
+        justify-content: center;
+        gap: 1rem;
+        margin: 2rem 0;
+    }
+
+    .pagination-button {
+        padding: 0.5rem 1rem;
+        border: 1px solid #007bff;
+        border-radius: 4px;
+        color: #007bff;
+        cursor: pointer;
+        transition: all 0.3s ease;
+    }
+
+    .pagination-button:hover {
+        background: #007bff;
+        color: white;
+    }
+
+    .pagination-button.disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
+    }
+
+    .pagination-info {
+        font-weight: 600;
+    }
+
+    .context-modal {
+        display: none;
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0, 0, 0, 0.5);
+        z-index: 1000;
+    }
+
+    .context-modal-content {
+        position: relative;
+        background: white;
+        width: 90%;
+        max-width: 800px;
+        margin: 50px auto;
+        padding: 2rem;
+        border-radius: 12px;
+        max-height: 80vh;
+        overflow-y: auto;
+    }
+
+    .context-close {
+        position: absolute;
+        top: 1rem;
+        right: 1rem;
+        font-size: 1.5rem;
+        cursor: pointer;
+        color: #666;
+    }
+
+    .context-list {
+        margin-top: 1rem;
+    }
+
+    .context-item {
+        padding: 1rem;
+        border-bottom: 1px solid #eee;
+        display: flex;
+        align-items: flex-start;
+        gap: 1rem;
+    }
+
+    .context-item:last-child {
+        border-bottom: none;
+    }
+
+    .context-content {
+        flex: 1;
+    }
+
+    .context-sentence {
+        font-size: 1.1rem;
+        margin-bottom: 0.5rem;
+        line-height: 1.5;
+    }
+
+    .context-time {
+        color: #668;
+        font-size: 0.9rem;
+    }
+
+    .highlight {
+        background-color: #fff3cd;
+        padding: 0.2rem 0.4rem;
+        border-radius: 4px;
+    }
+
+    .play-button {
+        background: #28a745;
+        color: white;
+        border: none;
+        border-radius: 50%;
+        width: 40px;
+        height: 40px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        flex-shrink: 0;
+    }
+
+    .play-button:hover {
+        background: #218838;
+        transform: scale(1.1);
+    }
+
+    .play-button i {
+        font-size: 1.2rem;
+    }
+
+    .video-container {
+        display: none;
+        position: fixed;
+        bottom: 20px;
+        right: 20px;
+        width: 320px;
+        background: white;
+        border-radius: 8px;
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        z-index: 1000;
+    }
+
+    .video-container.active {
+        display: block;
+    }
+
+    .video-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 8px 12px;
+        background: #f8f9fa;
+        border-radius: 8px 8px 0 0;
+    }
+
+    .video-title {
+        font-size: 14px;
+        font-weight: 600;
+        color: #333;
+    }
+
+    .video-close {
+        background: none;
+        border: none;
+        color: #666;
+        cursor: pointer;
+        padding: 4px;
+        font-size: 16px;
+    }
+
+    .video-close:hover {
+        color: #333;
+    }
+
+    .video-player {
+        width: 100%;
+        border-radius: 0 0 8px 8px;
+    }
+
+    .loading {
+        text-align: center;
+        padding: 2rem;
+        color: #666;
+    }
+
+    .error {
+        text-align: center;
+        padding: 2rem;
+        color: #dc3545;
+    }
+
+    .no-results {
+        text-align: center;
+        padding: 2rem;
+        color: #666;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="vocabulary-container">
+    <h1 class="mb-4">Vocabulary - {{ film.title }}</h1>
+
+    <!-- Search -->
+    <div class="search-container">
+        <input type="text" class="search-input" placeholder="Search words..." id="vocabularySearch">
+    </div>
+
+    <!-- CEFR Level Tabs -->
+    <div class="cefr-tabs">
+        <div class="cefr-tab active" data-level="all">All Levels</div>
+        <div class="cefr-tab" data-level="a1">A1</div>
+        <div class="cefr-tab" data-level="a2">A2</div>
+        <div class="cefr-tab" data-level="b1">B1</div>
+        <div class="cefr-tab" data-level="b2">B2</div>
+        <div class="cefr-tab" data-level="c1">C1</div>
+        <div class="cefr-tab" data-level="c2">C2</div>
+    </div>
+
+    <!-- Vocabulary Grid -->
+    <div class="vocabulary-grid">
+        {% for word, details in vocabulary_details.items %}
+        <div class="word-card" data-level="{{ details.level|lower }}" data-word="{{ word }}">
+            <div class="word-header">
+                <div class="word-title">{{ word }}</div>
+                <div class="cefr-badge {{ details.level|lower }}">{{ details.level }}</div>
+            </div>
+            <div class="word-definition">{{ details.definition }}</div>
+            <div class="word-stats">
+                <span>Frequency: {{ details.frequency }}</span>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+
+    <!-- Pagination -->
+    <div class="pagination">
+        {% if has_previous %}
+        <a href="?page={{ current_page|add:"-1" }}&level={{ current_level }}" class="pagination-button">Previous</a>
+        {% else %}
+        <span class="pagination-button disabled">Previous</span>
+        {% endif %}
+        
+        <span class="pagination-info">Page {{ current_page }} of {{ total_pages }}</span>
+        
+        {% if has_next %}
+        <a href="?page={{ current_page|add:"1" }}&level={{ current_level }}" class="pagination-button">Next</a>
+        {% else %}
+        <span class="pagination-button disabled">Next</span>
+        {% endif %}
+    </div>
+
+    <!-- Context Modal -->
+    <div id="contextModal" class="context-modal">
+        <div class="context-modal-content">
+            <span class="context-close">&times;</span>
+            <h3>Usage Contexts for "<span id="selectedWord"></span>"</h3>
+            <div class="context-list"></div>
+        </div>
+    </div>
+
+    <!-- Video Player -->
+    <div id="videoContainer" class="video-container">
+        <div class="video-header">
+            <span class="video-title">Sentence Preview</span>
+            <button class="video-close" onclick="closeVideoPlayer()">&times;</button>
+        </div>
+        <video id="contextVideo" class="video-player" controls>
+            Your browser does not support the video tag.
+        </video>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+const filmId = "{{ film.id }}";
+
+document.addEventListener('DOMContentLoaded', function() {
+    const modal = document.getElementById('contextModal');
+    const videoContainer = document.getElementById('videoContainer');
+    const closeBtn = document.querySelector('.context-close');
+    const selectedWordSpan = document.getElementById('selectedWord');
+    const cards = document.querySelectorAll('.word-card');
+    const searchInput = document.getElementById('vocabularySearch');
+    const tabs = document.querySelectorAll('.cefr-tab');
+    const video = document.getElementById('contextVideo');
+    let currentLevel = '{{ current_level|default:"all" }}';
+
+    // Set initial active tab
+    tabs.forEach(tab => {
+        if (tab.dataset.level === currentLevel) {
+            tab.classList.add('active');
+        } else {
+            tab.classList.remove('active');
+        }
+    });
+
+    // Search functionality
+    searchInput.addEventListener('input', function() {
+        const searchTerm = this.value.toLowerCase();
+        cards.forEach(card => {
+            const word = card.querySelector('.word-title').textContent.toLowerCase();
+            const definition = card.querySelector('.word-definition').textContent.toLowerCase();
+            const isVisible = word.includes(searchTerm) || definition.includes(searchTerm);
+            card.style.display = isVisible ? 'block' : 'none';
+        });
+    });
+
+    // Tab switching
+    tabs.forEach(tab => {
+        tab.addEventListener('click', function() {
+            const level = this.dataset.level;
+            currentLevel = level;
+            
+            // Update active tab
+            tabs.forEach(t => t.classList.remove('active'));
+            this.classList.add('active');
+            
+            // Redirect to first page with the selected level
+            window.location.href = `?level=${level}&page=1`;
+        });
+    });
+
+    // Word card click handler
+    cards.forEach(card => {
+        card.addEventListener('click', async () => {
+            const word = card.dataset.word;
+            selectedWordSpan.textContent = word;
+            
+            // Show loading state
+            const contextList = document.querySelector('.context-list');
+            contextList.innerHTML = '<div class="loading">Loading contexts...</div>';
+            modal.style.display = 'block';
+            
+            try {
+                // Fetch contexts for the word
+                const response = await fetch(`?word=${encodeURIComponent(word)}&level=${currentLevel}`);
+                if (!response.ok) {
+                    throw new Error('Failed to fetch contexts');
+                }
+                
+                const data = await response.json();
+                
+                if (data.contexts && data.contexts.length > 0) {
+                    contextList.innerHTML = '';
+                    data.contexts.forEach(context => {
+                        const contextItem = document.createElement('div');
+                        contextItem.className = 'context-item';
+                        contextItem.innerHTML = `
+                            <div class="context-content">
+                                <div class="context-sentence">${highlightWord(context.sentence, word)}</div>
+                                <div class="context-time">${context.start_time} - ${context.end_time}</div>
+                            </div>
+                            <button class="play-button" 
+                                    data-start="${context.start_time}" 
+                                    data-end="${context.end_time}"
+                                    data-sentence="${context.sentence}">
+                                <i class="fas fa-play"></i>
+                            </button>
+                        `;
+                        contextList.appendChild(contextItem);
+                    });
+                } else {
+                    contextList.innerHTML = '<div class="no-results">No contexts found for this word.</div>';
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                contextList.innerHTML = '<div class="error">Error loading contexts. Please try again.</div>';
+            }
+        });
+    });
+
+    // Play button click handler
+    document.addEventListener('click', function(e) {
+        if (e.target.closest('.play-button')) {
+            const button = e.target.closest('.play-button');
+            const startTime = button.dataset.start;
+            const endTime = button.dataset.end;
+            const sentence = button.dataset.sentence;
+            
+            // Update video title
+            const videoTitle = document.querySelector('.video-title');
+            videoTitle.textContent = sentence.length > 30 ? sentence.substring(0, 30) + '...' : sentence;
+            
+            // Show video container
+            videoContainer.classList.add('active');
+            
+            // Play video
+            playVideo(startTime, endTime);
+        }
+    });
+
+    // Close modals
+    closeBtn.addEventListener('click', () => {
+        modal.style.display = 'none';
+    });
+
+    // Close modals when clicking outside
+    window.addEventListener('click', (e) => {
+        if (e.target === modal) {
+            modal.style.display = 'none';
+        }
+    });
+});
+
+function highlightWord(sentence, word) {
+    const regex = new RegExp(`\\b${word}\\b`, 'gi');
+    return sentence.replace(regex, match => `<span class="highlight">${match}</span>`);
+}
+
+function playVideo(startTime, endTime) {
+    const video = document.getElementById('contextVideo');
+    const container = document.getElementById('videoContainer');
+    
+    // Reset video state
+    video.pause();
+    video.currentTime = 0;
+    
+    // Show loading state
+    video.style.display = 'none';
+    
+    // Create a new video source URL with the segment parameters
+    const segmentUrl = `/films/film/${filmId}/sentence-segment/?start=${encodeURIComponent(startTime)}&end=${encodeURIComponent(endTime)}`;
+    
+    // Set the video source and load
+    video.src = segmentUrl;
+    video.load();
+    
+    // Show video when it's ready to play
+    video.oncanplay = function() {
+        video.style.display = 'block';
+        try {
+            const playPromise = video.play();
+            if (playPromise !== undefined) {
+                playPromise.catch(error => {
+                    console.error('Error playing video:', error);
+                    closeVideoPlayer();
+                });
+            }
+        } catch (error) {
+            console.error('Error playing video:', error);
+            closeVideoPlayer();
+        }
+    };
+    
+    // Handle errors
+    video.onerror = function() {
+        console.error('Error loading video segment');
+        closeVideoPlayer();
+    };
+    
+    // Close player when video ends
+    video.onended = function() {
+        closeVideoPlayer();
+    };
+    
+    // Show container
+    container.classList.add('active');
+}
+
+function closeVideoPlayer() {
+    const video = document.getElementById('contextVideo');
+    const container = document.getElementById('videoContainer');
+    
+    // Stop video and reset
+    video.pause();
+    video.currentTime = 0;
+    video.src = '';
+    video.load();
+    
+    // Remove event listeners
+    video.oncanplay = null;
+    video.onerror = null;
+    video.onended = null;
+    
+    // Hide container
+    container.classList.remove('active');
+}
+
+// Add event listener for video container close button
+document.querySelector('.video-close').addEventListener('click', closeVideoPlayer);
+</script>
+{% endblock %} 

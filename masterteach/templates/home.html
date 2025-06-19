@@ -1,0 +1,118 @@
+{% extends 'base.html' %}
+
+{% block title %}MasterTeach - Learn Languages Through Films{% endblock %}
+
+{% block extra_css %}
+<style>
+    .hero {
+        text-align: center;
+        padding: 60px 20px;
+        background-color: var(--card-background);
+        border-radius: 8px;
+        margin-bottom: 40px;
+    }
+
+    .hero h1 {
+        font-size: 2.5rem;
+        margin-bottom: 20px;
+        color: var(--text-color);
+    }
+
+    .hero p {
+        font-size: 1.2rem;
+        color: var(--text-color);
+        margin-bottom: 30px;
+    }
+
+    .features {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+        gap: 30px;
+        margin-bottom: 40px;
+    }
+
+    .feature-card {
+        background-color: var(--card-background);
+        padding: 30px;
+        border-radius: 8px;
+        text-align: center;
+        transition: transform 0.3s ease;
+    }
+
+    .feature-card:hover {
+        transform: translateY(-5px);
+    }
+
+    .feature-card i {
+        font-size: 2.5rem;
+        color: var(--accent-color);
+        margin-bottom: 20px;
+    }
+
+    .feature-card h3 {
+        color: var(--text-color);
+        margin-bottom: 15px;
+    }
+
+    .feature-card p {
+        color: var(--text-color);
+        opacity: 0.8;
+    }
+
+    .cta-button {
+        display: inline-block;
+        padding: 15px 30px;
+        background-color: var(--accent-color);
+        color: var(--secondary-color);
+        text-decoration: none;
+        border-radius: 4px;
+        font-weight: 500;
+        transition: all 0.3s ease;
+    }
+
+    .cta-button:hover {
+        background-color: var(--primary-color);
+        transform: translateY(-2px);
+    }
+
+    @media (max-width: 768px) {
+        .hero {
+            padding: 40px 20px;
+        }
+
+        .hero h1 {
+            font-size: 2rem;
+        }
+
+        .features {
+            grid-template-columns: 1fr;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="hero">
+    <h1>Learn Languages Through Films</h1>
+    <p>MasterTeach helps you learn languages naturally by watching films with smart subtitles and vocabulary analysis.</p>
+    <a href="{% url 'films:film_list' %}" class="cta-button">Start Learning</a>
+</div>
+
+<div class="features">
+    <div class="feature-card">
+        <i class="fas fa-film"></i>
+        <h3>Smart Subtitles</h3>
+        <p>Watch films with intelligent subtitles that adapt to your language level and learning needs.</p>
+    </div>
+    <div class="feature-card">
+        <i class="fas fa-book"></i>
+        <h3>Vocabulary Analysis</h3>
+        <p>Get detailed analysis of vocabulary used in films, including CEFR levels and difficulty ratings.</p>
+    </div>
+    <div class="feature-card">
+        <i class="fas fa-chart-line"></i>
+        <h3>Progress Tracking</h3>
+        <p>Track your learning progress and see how your language skills improve over time.</p>
+    </div>
+</div>
+{% endblock %} 

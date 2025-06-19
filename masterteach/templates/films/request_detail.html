@@ -1,0 +1,145 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Film Request: {{ request.tmdb_title }}{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <nav aria-label="breadcrumb">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a href="{% url 'films:request_list' %}">{% if user.is_superuser %}All Requests{% else %}My Requests{% endif %}</a></li>
+            <li class="breadcrumb-item active">{{ request.tmdb_title }}</li>
+        </ol>
+    </nav>
+
+    <div class="row">
+        <div class="col-md-4">
+            <div class="card">
+                {% if request.tmdb_poster_path %}
+                    <img src="{{ request.get_tmdb_poster_url }}" class="card-img-top" alt="{{ request.tmdb_title }}">
+                {% else %}
+                    <div class="card-img-top bg-light d-flex align-items-center justify-content-center" style="height: 400px;">
+                        <i class="fas fa-film fa-3x text-muted"></i>
+                    </div>
+                {% endif %}
+                <div class="card-body">
+                    <h5 class="card-title">{{ request.tmdb_title }}</h5>
+                    <p class="card-text text-muted">
+                        <small>Requested by {{ request.user.username }} on {{ request.created_at|date:"F j, Y" }}</small>
+                    </p>
+                    <div class="mb-3">
+                        <span class="badge {% if request.status == 'pending' %}bg-warning{% elif request.status == 'approved' %}bg-success{% elif request.status == 'rejected' %}bg-danger{% else %}bg-info{% endif %}">
+                            {{ request.status|title }}
+                        </span>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-8">
+            <div class="card">
+                <div class="card-body">
+                    <h5 class="card-title">Request Details</h5>
+                    <dl class="row">
+                        <dt class="col-sm-3">Status</dt>
+                        <dd class="col-sm-9">
+                            <span class="badge {% if request.status == 'pending' %}bg-warning{% elif request.status == 'approved' %}bg-success{% elif request.status == 'rejected' %}bg-danger{% else %}bg-info{% endif %}">
+                                {{ request.status|title }}
+                            </span>
+                        </dd>
+
+                        <dt class="col-sm-3">Requested By</dt>
+                        <dd class="col-sm-9">{{ request.user.username }}</dd>
+
+                        <dt class="col-sm-3">Requested On</dt>
+                        <dd class="col-sm-9">{{ request.created_at|date:"F j, Y H:i" }}</dd>
+
+                        <dt class="col-sm-3">Last Updated</dt>
+                        <dd class="col-sm-9">{{ request.updated_at|date:"F j, Y H:i" }}</dd>
+
+                        {% if request.notes %}
+                            <dt class="col-sm-3">Notes</dt>
+                            <dd class="col-sm-9">{{ request.notes }}</dd>
+                        {% endif %}
+                    </dl>
+
+                    {% if request.tmdb_overview %}
+                        <h6 class="mt-4">Overview</h6>
+                        <p>{{ request.tmdb_overview }}</p>
+                    {% endif %}
+
+                    {% if request.film %}
+                        <div class="mt-4">
+                            <h6>Uploaded Film</h6>
+                            <a href="{% url 'films:film_detail' request.film.id %}" class="btn btn-primary">
+                                View Film
+                            </a>
+                        </div>
+                    {% endif %}
+
+                    {% if user.is_superuser and request.status == 'pending' %}
+                        <div class="mt-4">
+                            <h6>Admin Actions</h6>
+                            <div class="d-flex gap-2">
+                                <button class="btn btn-success" onclick="updateRequestStatus('approved')">
+                                    <i class="fas fa-check"></i> Approve Request
+                                </button>
+                                <button class="btn btn-danger" onclick="updateRequestStatus('rejected')">
+                                    <i class="fas fa-times"></i> Reject Request
+                                </button>
+                                <a href="{% url 'films:upload_video' %}?tmdb_id={{ request.tmdb_id }}" class="btn btn-primary">
+                                    <i class="fas fa-upload"></i> Upload Film
+                                </a>
+                            </div>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% if user.is_superuser %}
+<script>
+function updateRequestStatus(status) {
+    if (!confirm(`Are you sure you want to ${status} this request?`)) {
+        return;
+    }
+
+    fetch(`{% url 'films:update_request_status' request.id %}`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': getCookie('csrftoken')
+        },
+        body: JSON.stringify({ status: status })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.error) {
+            alert(data.error);
+        } else {
+            window.location.reload();
+        }
+    })
+    .catch(error => {
+        alert('Error updating request status: ' + error.message);
+    });
+}
+
+function getCookie(name) {
+    let cookieValue = null;
+    if (document.cookie && document.cookie !== '') {
+        const cookies = document.cookie.split(';');
+        for (let i = 0; i < cookies.length; i++) {
+            const cookie = cookies[i].trim();
+            if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                break;
+            }
+        }
+    }
+    return cookieValue;
+}
+</script>
+{% endif %}
+{% endblock %} 

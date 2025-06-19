@@ -1,0 +1,19 @@
+{% extends "admin/base_site.html" %}
+{% load i18n admin_urls static admin_modify %}
+
+{% block content %}
+<div id="content-main">
+    <div class="module">
+        <h2>Search YTS Movies</h2>
+        <form method="post">
+            {% csrf_token %}
+            <div class="form-row">
+                {{ form.as_p }}
+            </div>
+            <div class="submit-row">
+                <input type="submit" value="Search" class="default" />
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %} 

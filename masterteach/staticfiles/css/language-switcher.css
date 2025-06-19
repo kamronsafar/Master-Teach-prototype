@@ -1,0 +1,74 @@
+.language-switcher {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    z-index: 1000;
+}
+
+.language-btn {
+    background: var(--primary-color);
+    color: white;
+    border: none;
+    padding: 8px 16px;
+    border-radius: 20px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 14px;
+    transition: all 0.3s ease;
+}
+
+.language-btn:hover {
+    background: var(--primary-color-dark);
+}
+
+.language-dropdown {
+    position: absolute;
+    top: 100%;
+    right: 0;
+    background: white;
+    border-radius: 8px;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+    margin-top: 8px;
+    display: none;
+    min-width: 150px;
+    max-height: 300px;
+    overflow-y: auto;
+}
+
+.language-dropdown.show {
+    display: block;
+}
+
+.language-option {
+    padding: 8px 16px;
+    cursor: pointer;
+    transition: background-color 0.2s ease;
+}
+
+.language-option:hover {
+    background-color: #f5f5f5;
+}
+
+.language-option.active {
+    background-color: var(--primary-color-light);
+    color: var(--primary-color);
+}
+
+/* Dark mode support */
+@media (prefers-color-scheme: dark) {
+    .language-dropdown {
+        background: #2d2d2d;
+        box-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
+    }
+
+    .language-option:hover {
+        background-color: #3d3d3d;
+    }
+
+    .language-option.active {
+        background-color: var(--primary-color-dark);
+        color: white;
+    }
+} 

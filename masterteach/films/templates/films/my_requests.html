@@ -1,0 +1,57 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="container mt-4">
+    <h2>{% if user.is_superuser %}All Film Requests{% else %}My Film Requests{% endif %}</h2>
+    
+    <div class="row">
+        {% for request in requests %}
+        <div class="col-md-6 mb-4">
+            <div class="card">
+                <div class="card-body">
+                    <h5 class="card-title">{{ request.title }}</h5>
+                    <p class="card-text">
+                        <strong>Status:</strong> 
+                        <span class="badge {% if request.status == 'pending' %}bg-warning
+                                         {% elif request.status == 'approved' %}bg-success
+                                         {% elif request.status == 'rejected' %}bg-danger
+                                         {% else %}bg-info{% endif %}">
+                            {{ request.get_status_display }}
+                        </span>
+                    </p>
+                    <p class="card-text">
+                        <strong>Requested by:</strong> {{ request.user.email }}<br>
+                        <strong>Date:</strong> {{ request.created_at|date:"F j, Y" }}
+                    </p>
+                    {% if request.notes %}
+                    <p class="card-text">
+                        <strong>Notes:</strong><br>
+                        {{ request.notes }}
+                    </p>
+                    {% endif %}
+
+                    {% if user.is_superuser and request.status == 'pending' %}
+                    <form method="post" action="{% url 'films:update_request_status' request.id %}" class="d-inline">
+                        {% csrf_token %}
+                        <input type="hidden" name="status" value="approved">
+                        <button type="submit" class="btn btn-success btn-sm">Approve</button>
+                    </form>
+                    <form method="post" action="{% url 'films:update_request_status' request.id %}" class="d-inline">
+                        {% csrf_token %}
+                        <input type="hidden" name="status" value="rejected">
+                        <button type="submit" class="btn btn-danger btn-sm">Reject</button>
+                    </form>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+        {% empty %}
+        <div class="col-12">
+            <div class="alert alert-info">
+                No film requests found.
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+{% endblock %} 

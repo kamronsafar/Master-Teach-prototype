@@ -1,0 +1,75 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2>Notifications</h2>
+        {% if unread_count > 0 %}
+        <form method="post" action="{% url 'films:mark_all_notifications_read' %}" class="d-inline">
+            {% csrf_token %}
+            <button type="submit" class="btn btn-secondary">Mark All as Read</button>
+        </form>
+        {% endif %}
+    </div>
+
+    <div class="row">
+        {% for notification in notifications %}
+        <div class="col-12 mb-3">
+            <div class="card {% if not notification.is_read %}border-primary{% endif %}">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-start">
+                        <div>
+                            <h5 class="card-title">
+                                {% if not notification.is_read %}
+                                <span class="badge bg-primary me-2">New</span>
+                                {% endif %}
+                                {{ notification.title }}
+                            </h5>
+                            <p class="card-text">{{ notification.message }}</p>
+                            <small class="text-muted">{{ notification.created_at|timesince }} ago</small>
+                        </div>
+                        {% if not notification.is_read %}
+                        <form method="post" action="{% url 'films:notifications' %}" class="d-inline">
+                            {% csrf_token %}
+                            <input type="hidden" name="notification_id" value="{{ notification.id }}">
+                            <button type="submit" class="btn btn-sm btn-outline-primary">Mark as Read</button>
+                        </form>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% empty %}
+        <div class="col-12">
+            <div class="alert alert-info">
+                No notifications found.
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+
+{% block extra_js %}
+<script>
+// Update notification count in navbar every 30 seconds
+function updateNotificationCount() {
+    fetch('{% url "films:get_unread_notification_count" %}')
+        .then(response => response.json())
+        .then(data => {
+            const badge = document.getElementById('notification-badge');
+            if (badge) {
+                if (data.count > 0) {
+                    badge.textContent = data.count;
+                    badge.style.display = 'inline';
+                } else {
+                    badge.style.display = 'none';
+                }
+            }
+        });
+}
+
+// Update count every 30 seconds
+setInterval(updateNotificationCount, 30000);
+</script>
+{% endblock %}
+{% endblock %} 

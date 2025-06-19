@@ -1,0 +1,246 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}{{ film.title }} - MasterTeach{% endblock %}
+
+{% block extra_css %}
+<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+<style>
+    .film-header {
+        background-color: var(--card-background);
+        border-radius: 12px;
+        padding: 2rem;
+        margin-bottom: 2rem;
+        box-shadow: 0 4px 15px var(--shadow-color);
+    }
+    
+    .film-poster {
+        width: 100%;
+        max-width: 300px;
+        border-radius: 8px;
+        box-shadow: 0 4px 15px var(--shadow-color);
+    }
+    
+    .film-info {
+        color: var(--text-color);
+    }
+    
+    .film-title {
+        font-size: 2rem;
+        font-weight: 600;
+        margin-bottom: 1rem;
+        color: var(--text-color);
+    }
+    
+    .film-meta {
+        font-size: 1rem;
+        color: var(--text-muted);
+        margin-bottom: 1.5rem;
+    }
+    
+    .film-meta p {
+        margin-bottom: 0.5rem;
+    }
+    
+    .film-meta i {
+        width: 24px;
+        text-align: center;
+        margin-right: 0.5rem;
+    }
+    
+    .film-description {
+        font-size: 1.1rem;
+        line-height: 1.6;
+        color: var(--text-color);
+        margin-bottom: 1.5rem;
+    }
+    
+    .film-actions {
+        margin-top: 1.5rem;
+    }
+    
+    .film-actions .btn {
+        margin-right: 0.5rem;
+        margin-bottom: 0.5rem;
+    }
+    
+    .vocabulary-section {
+        background-color: var(--card-background);
+        border-radius: 12px;
+        padding: 2rem;
+        margin-top: 2rem;
+        box-shadow: 0 4px 15px var(--shadow-color);
+    }
+    
+    .vocabulary-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 1.5rem;
+    }
+    
+    .vocabulary-title {
+        font-size: 1.5rem;
+        font-weight: 600;
+        margin: 0;
+        color: var(--text-color);
+    }
+    
+    .vocabulary-filters {
+        display: flex;
+        gap: 1rem;
+        margin-bottom: 1.5rem;
+    }
+    
+    .vocabulary-table {
+        width: 100%;
+        margin-bottom: 1rem;
+    }
+    
+    .vocabulary-table th {
+        font-weight: 600;
+        color: var(--text-color);
+    }
+    
+    .vocabulary-table td {
+        color: var(--text-color);
+    }
+    
+    .vocabulary-pagination {
+        display: flex;
+        justify-content: center;
+        margin-top: 1.5rem;
+    }
+    
+    .loading-overlay {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0, 0, 0, 0.5);
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        z-index: 1000;
+        display: none;
+    }
+    
+    .loading-spinner {
+        width: 50px;
+        height: 50px;
+        border: 5px solid var(--border-color);
+        border-top: 5px solid var(--accent-color);
+        border-radius: 50%;
+        animation: spin 1s linear infinite;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container mt-5">
+    <div class="film-header">
+        <div class="row">
+            <div class="col-md-4 text-center">
+                {% if film.tmdb_poster_path %}
+                    <img src="https://image.tmdb.org/t/p/w500{{ film.tmdb_poster_path }}" alt="{{ film.title }}" class="film-poster">
+                {% elif film.thumbnail %}
+                    <img src="{{ film.thumbnail.url }}" alt="{{ film.title }}" class="film-poster">
+                {% else %}
+                    <div class="film-poster d-flex align-items-center justify-content-center bg-light">
+                        <i class="fas fa-film fa-5x text-muted"></i>
+                    </div>
+                {% endif %}
+            </div>
+            <div class="col-md-8">
+                <div class="film-info">
+                    <h1 class="film-title">{{ film.title }}</h1>
+                    <div class="film-meta">
+                        {% if user.is_superuser %}
+                            <p>
+                                <i class="fas fa-user"></i>Uploaded by {{ film.uploaded_by.username }}
+                            </p>
+                        {% endif %}
+                        <p>
+                            <i class="fas fa-calendar"></i>Uploaded on {{ film.uploaded_at|date:"F j, Y" }}
+                        </p>
+                        {% if film.cefr_level %}
+                            <p>
+                                <i class="fas fa-graduation-cap"></i>CEFR Level: {{ film.cefr_level }}
+                            </p>
+                        {% endif %}
+                        {% if film.tmdb_vote_average %}
+                            <p>
+                                <i class="fas fa-star text-warning"></i>Rating: {{ film.tmdb_vote_average|floatformat:1 }}/10
+                            </p>
+                        {% endif %}
+                        <p>
+                            <span class="badge {% if film.visibility == 'public' %}bg-success{% else %}bg-info{% endif %}">
+                                {{ film.visibility|title }}
+                            </span>
+                        </p>
+                    </div>
+                    {% if film.tmdb_overview %}
+                        <div class="film-description">
+                            {{ film.tmdb_overview }}
+                        </div>
+                    {% endif %}
+                    <div class="film-actions">
+                        <a href="{% url 'films:play_video' film.id %}" class="btn btn-primary">
+                            <i class="fas fa-play me-2"></i>Watch Film
+                        </a>
+                        <a href="{% url 'films:film_vocabulary' film.id %}" class="btn btn-outline-primary">
+                            <i class="fas fa-book me-2"></i>View Vocabulary
+                        </a>
+                        {% if user.is_superuser %}
+                            <a href="{% url 'films:edit_film' film.id %}" class="btn btn-outline-secondary">
+                                <i class="fas fa-edit me-2"></i>Edit Film
+                            </a>
+                        {% endif %}
+                       
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    {% if messages %}
+        {% for message in messages %}
+            <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+                {{ message }}
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
+        {% endfor %}
+    {% endif %}
+</div>
+
+<div class="loading-overlay" id="loadingOverlay">
+    <div class="loading-spinner"></div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const loadingOverlay = document.getElementById('loadingOverlay');
+    
+    // Show loading overlay when navigating
+    document.querySelectorAll('a').forEach(link => {
+        link.addEventListener('click', function(e) {
+            if (!this.getAttribute('data-no-loading')) {
+                loadingOverlay.style.display = 'flex';
+            }
+        });
+    });
+    
+    // Auto-dismiss alerts after 5 seconds
+    document.querySelectorAll('.alert').forEach(alert => {
+        setTimeout(() => {
+            const bsAlert = new bootstrap.Alert(alert);
+            bsAlert.close();
+        }, 5000);
+    });
+});
+</script>
+{% endblock %}

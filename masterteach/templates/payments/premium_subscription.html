@@ -1,0 +1,439 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Premium Subscription - MasterTeach{% endblock %}
+
+{% block extra_css %}
+<style>
+    .premium-container {
+        background-color: var(--card-background);
+        border-radius: 12px;
+        padding: 2rem;
+        margin-bottom: 2rem;
+        box-shadow: 0 4px 15px var(--shadow-color);
+    }
+    
+    .premium-header {
+        text-align: center;
+        margin-bottom: 2rem;
+    }
+    
+    .premium-price {
+        font-size: 2.5rem;
+        font-weight: 700;
+        color: var(--accent-color);
+        margin: 1rem 0;
+    }
+    
+    .benefits-list {
+        list-style: none;
+        padding: 0;
+        margin: 2rem 0;
+    }
+    
+    .benefits-list li {
+        padding: 1rem;
+        margin-bottom: 0.5rem;
+        background-color: var(--card-background);
+        border-radius: 8px;
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+    }
+    
+    .benefits-list li i {
+        color: var(--accent-color);
+        font-size: 1.2rem;
+    }
+    
+    .payment-methods {
+        background-color: var(--card-background);
+        border-radius: 8px;
+        padding: 1.5rem;
+        margin: 2rem 0;
+    }
+    
+    .payment-method {
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+        padding: 1rem;
+        border: 1px solid var(--border-color);
+        border-radius: 8px;
+        margin-bottom: 1rem;
+        cursor: pointer;
+        transition: all 0.3s ease;
+    }
+    
+    .payment-method:hover {
+        border-color: var(--accent-color);
+        background-color: var(--hover-color);
+    }
+    
+    .payment-method.selected {
+        border-color: var(--accent-color);
+        background-color: var(--hover-color);
+    }
+    
+    .payment-method img {
+        width: 40px;
+        height: 40px;
+        object-fit: contain;
+    }
+    
+    .payment-method-info {
+        flex-grow: 1;
+    }
+    
+    .payment-method-info h5 {
+        margin: 0;
+        color: var(--text-color);
+    }
+    
+    .payment-method-info p {
+        margin: 0;
+        font-size: 0.9rem;
+        color: var(--text-muted);
+    }
+    
+    .subscribe-button {
+        width: 100%;
+        padding: 1rem;
+        font-size: 1.2rem;
+        font-weight: 600;
+    }
+    
+    .premium-badge {
+        background-color: var(--accent-color);
+        color: white;
+        padding: 0.5rem 1rem;
+        border-radius: 20px;
+        font-weight: 600;
+        display: inline-block;
+        margin-bottom: 1rem;
+    }
+
+    .payment-details {
+        background-color: var(--card-background);
+        border-radius: 8px;
+        padding: 1.5rem;
+        margin: 1rem 0;
+        display: none;
+    }
+
+    .payment-details.active {
+        display: block;
+    }
+
+    .form-group {
+        margin-bottom: 1rem;
+    }
+
+    .form-group label {
+        font-weight: 600;
+        margin-bottom: 0.5rem;
+        display: block;
+    }
+
+    .form-control {
+        width: 100%;
+        padding: 0.75rem;
+        border: 1px solid var(--border-color);
+        border-radius: 4px;
+        background-color: var(--input-background);
+        color: var(--text-color);
+    }
+
+    .form-control:focus {
+        border-color: var(--accent-color);
+        outline: none;
+        box-shadow: 0 0 0 2px rgba(var(--accent-color-rgb), 0.1);
+    }
+
+    .card-row {
+        display: flex;
+        gap: 1rem;
+    }
+
+    .card-row .form-group {
+        flex: 1;
+    }
+
+    .crypto-address {
+        font-family: monospace;
+        background-color: var(--input-background);
+        padding: 1rem;
+        border-radius: 4px;
+        margin-top: 0.5rem;
+        word-break: break-all;
+    }
+
+    .copy-button {
+        background: none;
+        border: none;
+        color: var(--accent-color);
+        cursor: pointer;
+        padding: 0;
+        margin-left: 0.5rem;
+    }
+
+    .copy-button:hover {
+        color: var(--accent-color-dark);
+    }
+
+    .payment-instructions {
+        background-color: var(--card-background);
+        border-radius: 8px;
+        padding: 1rem;
+        margin-top: 1rem;
+    }
+
+    .payment-instructions ol {
+        margin: 0;
+        padding-left: 1.5rem;
+    }
+
+    .payment-instructions li {
+        margin-bottom: 0.5rem;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container py-5">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="premium-container">
+                <div class="premium-header">
+                    {% if is_premium %}
+                        <div class="premium-badge">
+                            <i class="fas fa-crown me-2"></i>Premium Member
+                        </div>
+                        <h2 class="mb-3">You're Already a Premium Member!</h2>
+                        <p class="text-muted">Enjoy all the premium benefits of our platform.</p>
+                    {% else %}
+                        <h2 class="mb-3">Upgrade to Premium</h2>
+                        <div class="premium-price">${{ subscription_price }}/month</div>
+                        <p class="text-muted">Get unlimited access to all films and exclusive benefits</p>
+                    {% endif %}
+                </div>
+
+                {% if not is_premium %}
+                    <div class="benefits-list">
+                        <h4 class="mb-3">Premium Benefits:</h4>
+                        <li>
+                            <i class="fas fa-film"></i>
+                            <div>
+                                <strong>Unlimited Film Access</strong>
+                                <p class="text-muted mb-0">Watch any film in our library without restrictions</p>
+                            </div>
+                        </li>
+                        <li>
+                            <i class="fas fa-tags"></i>
+                            <div>
+                                <strong>Reduced Film Prices</strong>
+                                <p class="text-muted mb-0">Pay only $0.50 per film purchase (50% discount)</p>
+                            </div>
+                        </li>
+                        <li>
+                            <i class="fas fa-headset"></i>
+                            <div>
+                                <strong>Priority Support</strong>
+                                <p class="text-muted mb-0">Get faster responses to your questions and issues</p>
+                            </div>
+                        </li>
+                        <li>
+                            <i class="fas fa-bolt"></i>
+                            <div>
+                                <strong>No Waiting Period</strong>
+                                <p class="text-muted mb-0">Watch films immediately without any cooldown</p>
+                            </div>
+                        </li>
+                    </div>
+
+                    <form method="POST" class="payment-form">
+                        {% csrf_token %}
+                        <div class="payment-methods">
+                            <h4 class="mb-3">Select Payment Method:</h4>
+                            <div class="payment-method selected" data-method="tron">
+                                <img src="{% static 'images/tron-logo.png' %}" alt="TRON">
+                                <div class="payment-method-info">
+                                    <h5>TRON (TRX)</h5>
+                                    <p>Pay with TRX - Lowest fees (1%)</p>
+                                </div>
+                                <input type="radio" name="payment_method" value="tron" checked style="display: none;">
+                            </div>
+                            <div class="payment-method" data-method="coinbase">
+                                <img src="{% static 'images/coinbase-logo.png' %}" alt="Coinbase">
+                                <div class="payment-method-info">
+                                    <h5>Coinbase Commerce</h5>
+                                    <p>Pay with Credit Card or Crypto (3.5% fee)</p>
+                                </div>
+                                <input type="radio" name="payment_method" value="coinbase" style="display: none;">
+                            </div>
+                        </div>
+
+                        <!-- TRON Payment Details -->
+                        <div class="payment-details active" id="tron-details">
+                            <h4 class="mb-3">TRON Payment Details</h4>
+                            <div class="form-group">
+                                <label>TRON Wallet Address</label>
+                                <div class="crypto-address">
+                                    {{ tron_wallet_address }}
+                                    <button type="button" class="copy-button" onclick="copyToClipboard('{{ tron_wallet_address }}')">
+                                        <i class="fas fa-copy"></i>
+                                    </button>
+                                </div>
+                            </div>
+                            <div class="form-group">
+                                <label>Amount to Send (TRX)</label>
+                                <div class="crypto-address">{{ trx_amount }} TRX</div>
+                            </div>
+                            <div class="payment-instructions">
+                                <h5>Payment Instructions:</h5>
+                                <ol>
+                                    <li>Copy the TRON wallet address above</li>
+                                    <li>Send exactly {{ trx_amount }} TRX to this address</li>
+                                    <li>Wait for the transaction to be confirmed (usually takes 1-2 minutes)</li>
+                                    <li>Your premium subscription will be activated automatically</li>
+                                </ol>
+                            </div>
+                        </div>
+
+                        <!-- Coinbase Payment Details -->
+                        <div class="payment-details" id="coinbase-details">
+                            <h4 class="mb-3">Credit Card Payment</h4>
+                            <div class="form-group">
+                                <label for="card_number">Card Number</label>
+                                <input type="text" class="form-control" id="card_number" placeholder="1234 5678 9012 3456" maxlength="19">
+                            </div>
+                            <div class="card-row">
+                                <div class="form-group">
+                                    <label for="expiry">Expiry Date</label>
+                                    <input type="text" class="form-control" id="expiry" placeholder="MM/YY" maxlength="5">
+                                </div>
+                                <div class="form-group">
+                                    <label for="cvv">CVV</label>
+                                    <input type="text" class="form-control" id="cvv" placeholder="123" maxlength="3">
+                                </div>
+                            </div>
+                            <div class="form-group">
+                                <label for="card_name">Name on Card</label>
+                                <input type="text" class="form-control" id="card_name" placeholder="John Doe">
+                            </div>
+                            <div class="payment-instructions">
+                                <h5>Payment Information:</h5>
+                                <ul>
+                                    <li>Your card will be charged ${{ subscription_price }} monthly</li>
+                                    <li>You can cancel your subscription at any time</li>
+                                    <li>All payments are secure and encrypted</li>
+                                </ul>
+                            </div>
+                        </div>
+
+                        <button type="submit" class="btn btn-primary subscribe-button">
+                            <i class="fas fa-crown me-2"></i>Subscribe Now
+                        </button>
+                    </form>
+                {% else %}
+                    <div class="text-center mt-4">
+                        <a href="{% url 'films:film_list' %}" class="btn btn-primary">
+                            <i class="fas fa-film me-2"></i>Browse Films
+                        </a>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Handle payment method selection
+    const paymentMethods = document.querySelectorAll('.payment-method');
+    const paymentDetails = document.querySelectorAll('.payment-details');
+    
+    paymentMethods.forEach(method => {
+        method.addEventListener('click', function() {
+            // Remove selected class from all methods
+            paymentMethods.forEach(m => m.classList.remove('selected'));
+            // Add selected class to clicked method
+            this.classList.add('selected');
+            // Check the radio input
+            this.querySelector('input[type="radio"]').checked = true;
+            
+            // Show corresponding payment details
+            const methodType = this.dataset.method;
+            paymentDetails.forEach(detail => {
+                detail.classList.remove('active');
+                if (detail.id === `${methodType}-details`) {
+                    detail.classList.add('active');
+                }
+            });
+        });
+    });
+
+    // Handle form submission
+    const form = document.querySelector('.payment-form');
+    if (form) {
+        form.addEventListener('submit', function(e) {
+            const submitButton = this.querySelector('button[type="submit"]');
+            submitButton.disabled = true;
+            submitButton.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Processing...';
+        });
+    }
+
+    // Format card number input
+    const cardNumber = document.getElementById('card_number');
+    if (cardNumber) {
+        cardNumber.addEventListener('input', function(e) {
+            let value = e.target.value.replace(/\D/g, '');
+            let formattedValue = '';
+            for (let i = 0; i < value.length; i++) {
+                if (i > 0 && i % 4 === 0) {
+                    formattedValue += ' ';
+                }
+                formattedValue += value[i];
+            }
+            e.target.value = formattedValue;
+        });
+    }
+
+    // Format expiry date input
+    const expiry = document.getElementById('expiry');
+    if (expiry) {
+        expiry.addEventListener('input', function(e) {
+            let value = e.target.value.replace(/\D/g, '');
+            if (value.length >= 2) {
+                value = value.slice(0, 2) + '/' + value.slice(2);
+            }
+            e.target.value = value;
+        });
+    }
+
+    // Format CVV input
+    const cvv = document.getElementById('cvv');
+    if (cvv) {
+        cvv.addEventListener('input', function(e) {
+            e.target.value = e.target.value.replace(/\D/g, '');
+        });
+    }
+});
+
+// Copy to clipboard function
+function copyToClipboard(text) {
+    navigator.clipboard.writeText(text).then(() => {
+        const button = event.target.closest('.copy-button');
+        const icon = button.querySelector('i');
+        icon.classList.remove('fa-copy');
+        icon.classList.add('fa-check');
+        setTimeout(() => {
+            icon.classList.remove('fa-check');
+            icon.classList.add('fa-copy');
+        }, 2000);
+    });
+}
+</script>
+{% endblock %} 

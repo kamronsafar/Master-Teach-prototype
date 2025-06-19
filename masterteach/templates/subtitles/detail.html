@@ -1,0 +1,93 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block content %}
+<div class="container mt-5">
+    <div class="row">
+        <div class="col-md-12">
+            <div class="card mb-4">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h3 class="mb-0">{{ subtitle_file.title }}</h3>
+                    <a href="{% url 'subtitles:subtitle_player' subtitle_file.pk %}" class="btn btn-primary">
+                        View in Player
+                    </a>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <p><strong>Original Language:</strong> {{ subtitle_file.original_language }}</p>
+                            <p><strong>Target Language:</strong> {{ subtitle_file.target_language|default:"None" }}</p>
+                        </div>
+                        <div class="col-md-6">
+                            <p><strong>Dominant CEFR Level:</strong> 
+                                <span class="badge bg-{% if subtitle_file.dominant_cefr_level == 'A1' %}success{% elif subtitle_file.dominant_cefr_level == 'A2' %}info{% elif subtitle_file.dominant_cefr_level == 'B1' %}primary{% elif subtitle_file.dominant_cefr_level == 'B2' %}warning{% elif subtitle_file.dominant_cefr_level == 'C1' %}danger{% else %}dark{% endif %}">
+                                    {{ subtitle_file.dominant_cefr_level }}
+                                </span>
+                            </p>
+                            <p><strong>Total Lines:</strong> {{ lines.count }}</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="card-header">
+                    <h4 class="mb-0">Subtitle Lines</h4>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-striped">
+                            <thead>
+                                <tr>
+                                    <th>Time</th>
+                                    <th>Original Text</th>
+                                    <th>Translation</th>
+                                    <th>CEFR Level</th>
+                                    <th>Vocabulary Analysis</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for line in lines %}
+                                <tr>
+                                    <td>{{ line.start_time }} - {{ line.end_time }}</td>
+                                    <td>{{ line.original_text }}</td>
+                                    <td>{{ line.translated_text|default:"-" }}</td>
+                                    <td>
+                                        <span class="badge bg-{% if line.cefr_level == 'A1' %}success{% elif line.cefr_level == 'A2' %}info{% elif line.cefr_level == 'B1' %}primary{% elif line.cefr_level == 'B2' %}warning{% elif line.cefr_level == 'C1' %}danger{% else %}dark{% endif %}">
+                                            {{ line.cefr_level }}
+                                        </span>
+                                    </td>
+                                    <td>
+                                        {% if line.vocabulary_analysis.cefr_analysis %}
+                                            <div class="small">
+                                                <div>Known words: {{ line.vocabulary_analysis.cefr_analysis.known_words }}/{{ line.vocabulary_analysis.cefr_analysis.total_words }}</div>
+                                                <div class="progress" style="height: 5px;">
+                                                    {% for level, percentage in line.vocabulary_analysis.cefr_analysis.level_percentages.items %}
+                                                    <div class="progress-bar bg-{% if level == 'A1' %}success{% elif level == 'A2' %}info{% elif level == 'B1' %}primary{% elif level == 'B2' %}warning{% elif level == 'C1' %}danger{% else %}dark{% endif %}" 
+                                                         role="progressbar" 
+                                                         style="width: {{ percentage }}%"
+                                                         title="{{ level }}: {{ percentage|floatformat:1 }}%">
+                                                    </div>
+                                                    {% endfor %}
+                                                </div>
+                                            </div>
+                                        {% endif %}
+                                        <div class="mt-1">
+                                            {% for vocab in line.vocabulary.all %}
+                                            <span class="badge bg-secondary me-1">
+                                                {{ vocab.word }} ({{ vocab.frequency }})
+                                            </span>
+                                            {% endfor %}
+                                        </div>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %} 

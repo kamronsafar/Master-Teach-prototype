@@ -1,0 +1,153 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Profile - MasterTeach{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'css/user.css' %}">
+{% endblock %}
+
+{% block content %}
+<div class="container mt-5">
+    <div class="row">
+        <!-- Profile Information -->
+        <div class="col-md-4">
+            <div class="card">
+                <div class="card-body text-center">
+                    {% if profile.avatar %}
+                        <img src="{{ profile.avatar.url }}" alt="Profile Avatar" class="rounded-circle mb-3" style="width: 150px; height: 150px; object-fit: cover;">
+                    {% else %}
+                        <div class="rounded-circle bg-secondary mb-3 mx-auto" style="width: 150px; height: 150px; display: flex; align-items: center; justify-content: center;">
+                            <span class="text-white display-4">{{ user.username|first|upper }}</span>
+                        </div>
+                    {% endif %}
+                    <h3>{{ user.username }}</h3>
+                    <p class="text-muted">{{ user.email }}</p>
+                    {% if profile.bio %}
+                        <p class="mt-3">{{ profile.bio }}</p>
+                    {% endif %}
+                    <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#editProfileModal">
+                        Edit Profile
+                    </button>
+                </div>
+            </div>
+
+            <!-- MFA Section -->
+            <div class="card mt-4">
+                <div class="card-body">
+                    <h5 class="card-title">Two-Factor Authentication</h5>
+                    {% if user.mfa_enabled %}
+                        <p class="text-success">✓ MFA is enabled</p>
+                        <form method="post" action="{% url 'disable_mfa' %}">
+                            {% csrf_token %}
+                            <button type="submit" class="btn btn-danger">Disable MFA</button>
+                        </form>
+                    {% else %}
+                        <p class="text-muted">MFA is not enabled</p>
+                        <a href="{% url 'mfa_setup' %}" class="btn btn-primary">Enable MFA</a>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <!-- Learning Statistics -->
+        <div class="col-md-8">
+            <div class="card">
+                <div class="card-body">
+                    <h4 class="card-title mb-4">Learning Statistics</h4>
+                    <div class="row">
+                        <div class="col-md-4">
+                            <div class="text-center">
+                                <h3>{{ progress_stats.total_watch_time|default:0|floatformat:0 }}</h3>
+                                <p class="text-muted">Minutes Watched</p>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="text-center">
+                                <h3>{{ progress_stats.total_films|default:0 }}</h3>
+                                <p class="text-muted">Films Started</p>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="text-center">
+                                <h3>{{ progress_stats.completed_films|default:0 }}</h3>
+                                <p class="text-muted">Films Completed</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Recent Activity -->
+            <div class="card mt-4">
+                <div class="card-body">
+                    <h4 class="card-title mb-4">Recent Activity</h4>
+                    {% if recent_progress %}
+                        <div class="list-group">
+                            {% for progress in recent_progress %}
+                                <a href="{% url 'film_detail' progress.film.id %}" class="list-group-item list-group-item-action">
+                                    <div class="d-flex w-100 justify-content-between">
+                                        <h5 class="mb-1">{{ progress.film.title }}</h5>
+                                        <small>{{ progress.last_watched|timesince }} ago</small>
+                                    </div>
+                                    <p class="mb-1">
+                                        {% if progress.completed %}
+                                            <span class="badge bg-success">Completed</span>
+                                        {% else %}
+                                            <span class="badge bg-primary">{{ progress.current_position|floatformat:0 }} minutes</span>
+                                        {% endif %}
+                                    </p>
+                                </a>
+                            {% endfor %}
+                        </div>
+                    {% else %}
+                        <p class="text-muted">No recent activity</p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Edit Profile Modal -->
+<div class="modal fade" id="editProfileModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Edit Profile</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form method="post" action="{% url 'update_profile' %}" enctype="multipart/form-data">
+                {% csrf_token %}
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label for="username" class="form-label">Username</label>
+                        <input type="text" class="form-control" id="username" name="username" value="{{ user.username }}" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="email" class="form-label">Email</label>
+                        <input type="email" class="form-control" id="email" name="email" value="{{ user.email }}" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="bio" class="form-label">Bio</label>
+                        <textarea class="form-control" id="bio" name="bio" rows="3">{{ profile.bio }}</textarea>
+                    </div>
+                    <div class="mb-3">
+                        <label for="avatar" class="form-label">Profile Picture</label>
+                        <input type="file" class="form-control" id="avatar" name="avatar" accept="image/*">
+                        <small class="text-muted">Max file size: 5MB. Supported formats: JPG, JPEG, PNG</small>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Save Changes</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="{% static 'js/user.js' %}"></script>
+{% endblock %}

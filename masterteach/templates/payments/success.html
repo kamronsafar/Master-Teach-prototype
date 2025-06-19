@@ -1,0 +1,45 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block content %}
+<div class="container mt-5">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card">
+                <div class="card-body text-center">
+                    <div class="mb-4">
+                        <i class="fas fa-check-circle text-success" style="font-size: 4rem;"></i>
+                    </div>
+                    <h2 class="card-title">Payment Successful!</h2>
+                    <p class="card-text">Your payment has been processed successfully.</p>
+                    
+                    {% if payment.payment_type == 'film_purchase' %}
+                        <div class="alert alert-info mt-3">
+                            <h5>Delivery Information</h5>
+                            <p>
+                                {% if payment.delivery_type == 'fast' %}
+                                    Your film will be delivered within 3-4 hours.
+                                {% else %}
+                                    Your film will be delivered within 24 hours.
+                                {% endif %}
+                            </p>
+                            <p class="mb-0">
+                                Estimated delivery: {{ payment.estimated_delivery|date:"F j, Y, g:i a" }}
+                            </p>
+                        </div>
+                    {% elif payment.payment_type == 'premium_subscription' %}
+                        <div class="alert alert-success mt-3">
+                            <h5>Premium Subscription Activated</h5>
+                            <p>You now have unlimited access to films!</p>
+                        </div>
+                    {% endif %}
+                    
+                    <div class="mt-4">
+                        <a href="{% url 'home' %}" class="btn btn-primary">Return to Home</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %} 

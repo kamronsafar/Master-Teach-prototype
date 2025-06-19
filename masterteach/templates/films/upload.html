@@ -1,0 +1,506 @@
+{% extends 'base.html' %}
+{% load static %}
+{% load crispy_forms_tags %}
+
+{% block title %}Upload Video - MasterTeach{% endblock %}
+
+{% block extra_css %}
+<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+<style>
+    .upload-container {
+        max-width: 800px;
+        margin: 0 auto;
+    }
+    
+    .upload-card {
+        background-color: var(--card-background);
+        border-radius: 12px;
+        box-shadow: 0 4px 15px var(--shadow-color);
+    }
+    
+    .upload-header {
+        background-color: var(--accent-color);
+        color: var(--secondary-color);
+        padding: 1.5rem;
+        border-radius: 12px 12px 0 0;
+    }
+    
+    .upload-body {
+        padding: 2rem;
+    }
+    
+    .file-input-wrapper {
+        position: relative;
+        margin-bottom: 1.5rem;
+    }
+    
+    .file-input-label {
+        display: block;
+        padding: 2rem;
+        border: 2px dashed var(--border-color);
+        border-radius: 8px;
+        text-align: center;
+        cursor: pointer;
+        transition: all 0.3s ease;
+    }
+    
+    .file-input-label:hover {
+        border-color: var(--accent-color);
+        background-color: var(--card-background);
+    }
+    
+    .file-input {
+        position: absolute;
+        width: 0;
+        height: 0;
+        opacity: 0;
+    }
+    
+    .file-name {
+        margin-top: 0.5rem;
+        font-size: 0.875rem;
+        color: var(--text-color);
+    }
+    
+    .upload-progress {
+        display: none;
+        margin-top: 1.5rem;
+    }
+    
+    .progress {
+        height: 0.5rem;
+        background-color: var(--border-color);
+    }
+    
+    .progress-bar {
+        background-color: var(--accent-color);
+        transition: width 0.3s ease;
+    }
+    
+    .upload-status {
+        margin-top: 0.5rem;
+        font-size: 0.875rem;
+        color: var(--text-color);
+    }
+    
+    .error-message {
+        color: #dc3545;
+        font-size: 0.875rem;
+        margin-top: 0.25rem;
+    }
+    
+    .tmdb-search-container {
+        margin-bottom: 2rem;
+        padding: 1.5rem;
+        background: #f8f9fa;
+        border-radius: 12px;
+        border: 1px solid #dee2e6;
+    }
+    
+    .tmdb-search-container h3 {
+        margin-bottom: 1rem;
+        color: #2c3e50;
+    }
+    
+    .tmdb-search-input {
+        position: relative;
+        margin-bottom: 1rem;
+    }
+    
+    .tmdb-search-results {
+        position: absolute;
+        width: 100%;
+        max-height: 400px;
+        overflow-y: auto;
+        background: white;
+        border: 1px solid #dee2e6;
+        border-radius: 8px;
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        z-index: 1000;
+        display: none;
+    }
+    
+    .tmdb-result-item {
+        padding: 1rem;
+        cursor: pointer;
+        border-bottom: 1px solid #dee2e6;
+        transition: background-color 0.2s;
+    }
+    
+    .tmdb-result-item:hover {
+        background-color: #f8f9fa;
+    }
+    
+    .tmdb-result-info {
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+    }
+    
+    .tmdb-result-item img {
+        width: 60px;
+        height: 90px;
+        object-fit: cover;
+        border-radius: 4px;
+    }
+    
+    .tmdb-result-details {
+        flex: 1;
+    }
+    
+    .tmdb-result-title {
+        font-weight: 600;
+        color: #2c3e50;
+        margin-bottom: 0.25rem;
+    }
+    
+    .tmdb-result-year {
+        color: #6c757d;
+        font-size: 0.9rem;
+    }
+    
+    .tmdb-result-rating {
+        color: #ffc107;
+        font-size: 0.9rem;
+    }
+    
+    .selected-movie {
+        margin-top: 1rem;
+        padding: 1rem;
+        background: #e3f2fd;
+        border-radius: 8px;
+        display: none;
+    }
+    
+    .selected-movie img {
+        width: 100px;
+        height: 150px;
+        object-fit: cover;
+        border-radius: 4px;
+    }
+    
+    .upload-section {
+        margin-top: 2rem;
+        padding-top: 2rem;
+        border-top: 1px solid #dee2e6;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container mt-5">
+    <div class="upload-container">
+        <div class="upload-card">
+            <div class="upload-header">
+                <h2 class="mb-0">Upload New Video</h2>
+            </div>
+            <div class="upload-body">
+                <form id="uploadForm" method="post" enctype="multipart/form-data" class="needs-validation" novalidate>
+                    {% csrf_token %}
+                    
+                    {% if messages %}
+                        {% for message in messages %}
+                            <div class="alert alert-{{ message.tags }}">
+                                {{ message }}
+                            </div>
+                        {% endfor %}
+                    {% endif %}
+                    
+                    <div class="tmdb-search-container">
+                        <h3>Step 1: Search and Select Movie</h3>
+                        <div class="tmdb-search-input">
+                            <label for="id_tmdb_search" class="form-label">Search for a movie on TMDB</label>
+                            <input type="text" 
+                                   id="id_tmdb_search" 
+                                   class="form-control form-control-lg" 
+                                   placeholder="Type movie title to search..."
+                                   autocomplete="off">
+                            <div id="tmdbSearchResults" class="tmdb-search-results"></div>
+                            <div id="tmdbSearchError" class="text-danger mt-2" style="display: none;"></div>
+                        </div>
+                        
+                        <div id="selectedMovie" class="selected-movie">
+                            <div class="d-flex align-items-center gap-3">
+                                <img id="selectedMoviePoster" src="" alt="">
+                                <div>
+                                    <h4 id="selectedMovieTitle" class="mb-2"></h4>
+                                    <p id="selectedMovieYear" class="text-muted mb-1"></p>
+                                    <p id="selectedMovieRating" class="text-warning mb-0"></p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    {{ form.tmdb_id }}
+                    {{ form.title }}
+                    
+                    <div class="mb-3">
+                        <label class="form-label">Visibility</label>
+                        {{ form.visibility }}
+                    </div>
+                    
+                    <div class="upload-section">
+                        <h3>Step 2: Upload Files</h3>
+                        <div class="file-input-wrapper">
+                            <label class="file-input-label" for="id_video_file">
+                                <i class="fas fa-cloud-upload-alt fa-3x mb-3"></i>
+                                <h4>Drag and drop your video here</h4>
+                                <p class="text-muted">or click to browse</p>
+                                <input type="file" name="video_file" id="id_video_file" class="file-input" accept="video/*" required>
+                            </label>
+                            <div class="file-name" id="fileName"></div>
+                        </div>
+                        
+                        <div class="mb-3">
+                            {{ form.english_subtitle|as_crispy_field }}
+                        </div>
+                        
+                        <div class="mb-3">
+                            {{ form.russian_subtitle|as_crispy_field }}
+                        </div>
+                    </div>
+                    
+                    <div class="upload-progress" id="uploadProgress">
+                        <div class="progress">
+                            <div class="progress-bar" role="progressbar" style="width: 0%"></div>
+                        </div>
+                        <div class="upload-status" id="uploadStatus">Preparing upload...</div>
+                    </div>
+                    
+                    <div class="d-grid gap-2">
+                        <button type="submit" class="btn btn-primary btn-lg" id="uploadButton">
+                            <i class="fas fa-upload me-2"></i>Upload Video
+                        </button>
+                        <a href="{% url 'films:film_list' %}" class="btn btn-outline-secondary">
+                            <i class="fas fa-arrow-left me-2"></i>Back to Films
+                        </a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const form = document.getElementById('uploadForm');
+    const fileInput = document.getElementById('id_video_file');
+    const fileName = document.getElementById('fileName');
+    const uploadProgress = document.getElementById('uploadProgress');
+    const progressBar = uploadProgress.querySelector('.progress-bar');
+    const uploadStatus = document.getElementById('uploadStatus');
+    const uploadButton = document.getElementById('uploadButton');
+    const tmdbSearch = document.getElementById('id_tmdb_search');
+    const tmdbSearchResults = document.getElementById('tmdbSearchResults');
+    const tmdbSearchError = document.getElementById('tmdbSearchError');
+    const tmdbId = document.getElementById('id_tmdb_id');
+    const filmTitle = document.getElementById('id_title');
+    const selectedMovie = document.getElementById('selectedMovie');
+    const selectedMoviePoster = document.getElementById('selectedMoviePoster');
+    const selectedMovieTitle = document.getElementById('selectedMovieTitle');
+    const selectedMovieYear = document.getElementById('selectedMovieYear');
+    const selectedMovieRating = document.getElementById('selectedMovieRating');
+    let searchTimeout;
+
+    // TMDB Search functionality
+    tmdbSearch.addEventListener('input', function(e) {
+        clearTimeout(searchTimeout);
+        const query = e.target.value.trim();
+        
+        if (query.length < 2) {
+            tmdbSearchResults.style.display = 'none';
+            return;
+        }
+        
+        // Show loading state
+        tmdbSearchResults.innerHTML = '<div class="text-center p-3">Searching...</div>';
+        tmdbSearchResults.style.display = 'block';
+        tmdbSearchError.style.display = 'none';
+        
+        searchTimeout = setTimeout(() => {
+            fetch(`/films/search-tmdb/?query=${encodeURIComponent(query)}`)
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error('Search failed');
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    tmdbSearchResults.innerHTML = '';
+                    if (data.length > 0) {
+                        data.forEach(movie => {
+                            const div = document.createElement('div');
+                            div.className = 'tmdb-result-item';
+                            div.innerHTML = `
+                                <div class="tmdb-result-info">
+                                    <img src="${movie.poster_path ? 'https://image.tmdb.org/t/p/w200' + movie.poster_path : '/static/images/no-poster.jpg'}" alt="${movie.title}">
+                                    <div class="tmdb-result-details">
+                                        <div class="tmdb-result-title">${movie.title}</div>
+                                        <div class="tmdb-result-year">${movie.release_date ? movie.release_date.split('-')[0] : 'N/A'}</div>
+                                        ${movie.vote_average ? `<div class="tmdb-result-rating"><i class="fas fa-star"></i> ${movie.vote_average.toFixed(1)}</div>` : ''}
+                                    </div>
+                                </div>
+                            `;
+                            div.addEventListener('click', () => {
+                                // Set the values
+                                document.getElementById('id_tmdb_id').value = movie.id;
+                                document.getElementById('id_title').value = movie.title;
+                                tmdbSearch.value = movie.title;
+                                
+                                // Hide the results
+                                tmdbSearchResults.style.display = 'none';
+                                
+                                // Update selected movie display
+                                selectedMoviePoster.src = movie.poster_path ? 'https://image.tmdb.org/t/p/w200' + movie.poster_path : '/static/images/no-poster.jpg';
+                                selectedMovieTitle.textContent = movie.title;
+                                selectedMovieYear.textContent = movie.release_date ? movie.release_date.split('-')[0] : 'N/A';
+                                selectedMovieRating.innerHTML = movie.vote_average ? 
+                                    `<i class="fas fa-star"></i> ${movie.vote_average.toFixed(1)}` : '';
+                                selectedMovie.style.display = 'block';
+                                
+                                // Log for debugging
+                                console.log('Selected movie:', {
+                                    id: movie.id,
+                                    title: movie.title,
+                                    tmdbId: document.getElementById('id_tmdb_id').value,
+                                    filmTitle: document.getElementById('id_title').value
+                                });
+                            });
+                            tmdbSearchResults.appendChild(div);
+                        });
+                        tmdbSearchResults.style.display = 'block';
+                    } else {
+                        tmdbSearchResults.innerHTML = '<div class="text-center p-3">No results found</div>';
+                    }
+                })
+                .catch(error => {
+                    console.error('Error searching TMDB:', error);
+                    tmdbSearchError.textContent = 'Error searching TMDB. Please try again.';
+                    tmdbSearchError.style.display = 'block';
+                    tmdbSearchResults.style.display = 'none';
+                });
+        }, 300);
+    });
+
+    // Close TMDB search results when clicking outside
+    document.addEventListener('click', function(e) {
+        if (!tmdbSearch.contains(e.target) && !tmdbSearchResults.contains(e.target)) {
+            tmdbSearchResults.style.display = 'none';
+        }
+    });
+
+    // Handle file selection
+    fileInput.addEventListener('change', function(e) {
+        const file = e.target.files[0];
+        if (file) {
+            fileName.textContent = `Selected file: ${file.name}`;
+        } else {
+            fileName.textContent = '';
+        }
+    });
+    
+    // Handle drag and drop
+    const dropZone = document.querySelector('.file-input-label');
+    
+    ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
+        dropZone.addEventListener(eventName, preventDefaults, false);
+    });
+    
+    function preventDefaults(e) {
+        e.preventDefault();
+        e.stopPropagation();
+    }
+    
+    ['dragenter', 'dragover'].forEach(eventName => {
+        dropZone.addEventListener(eventName, highlight, false);
+    });
+    
+    ['dragleave', 'drop'].forEach(eventName => {
+        dropZone.addEventListener(eventName, unhighlight, false);
+    });
+    
+    function highlight(e) {
+        dropZone.classList.add('border-primary');
+    }
+    
+    function unhighlight(e) {
+        dropZone.classList.remove('border-primary');
+    }
+    
+    dropZone.addEventListener('drop', handleDrop, false);
+    
+    function handleDrop(e) {
+        const dt = e.dataTransfer;
+        const file = dt.files[0];
+        fileInput.files = dt.files;
+        fileName.textContent = `Selected file: ${file.name}`;
+    }
+    
+    // Handle form submission
+    form.addEventListener('submit', function(e) {
+        e.preventDefault();
+        
+        if (!form.checkValidity()) {
+            e.stopPropagation();
+            form.classList.add('was-validated');
+            return;
+        }
+        
+        // Validate TMDB movie selection
+        if (!tmdbId.value) {
+            tmdbSearchError.textContent = 'Please select a movie from the search results';
+            tmdbSearchError.style.display = 'block';
+            return;
+        }
+        
+        const formData = new FormData(form);
+        const xhr = new XMLHttpRequest();
+        
+        uploadProgress.style.display = 'block';
+        uploadButton.disabled = true;
+        
+        xhr.upload.addEventListener('progress', function(e) {
+            if (e.lengthComputable) {
+                const percentComplete = (e.loaded / e.total) * 100;
+                progressBar.style.width = percentComplete + '%';
+                uploadStatus.textContent = `Uploading: ${Math.round(percentComplete)}%`;
+            }
+        });
+        
+        xhr.addEventListener('load', function() {
+            if (xhr.status === 200) {
+                try {
+                    const response = JSON.parse(xhr.responseText);
+                    if (response.status === 'success') {
+                        uploadStatus.textContent = 'Upload complete! Redirecting...';
+                        setTimeout(() => {
+                            window.location.href = response.redirect_url;
+                        }, 1000);
+                    } else {
+                        uploadStatus.textContent = `Error: ${response.message}`;
+                        uploadButton.disabled = false;
+                    }
+                } catch (e) {
+                    // If response is not JSON, it's probably a redirect
+                    window.location.href = xhr.responseURL;
+                }
+            } else {
+                uploadStatus.textContent = 'Upload failed. Please try again.';
+                uploadButton.disabled = false;
+            }
+        });
+        
+        xhr.addEventListener('error', function() {
+            uploadStatus.textContent = 'Upload failed. Please try again.';
+            uploadButton.disabled = false;
+        });
+        
+        xhr.open('POST', form.action, true);
+        xhr.send(formData);
+    });
+});
+</script>
+{% endblock %} 

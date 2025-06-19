@@ -1,0 +1,86 @@
+{% extends "admin/change_form.html" %}
+{% load i18n admin_urls %}
+
+{% block extrahead %}
+{{ block.super }}
+<style>
+    .subtitle-search {
+        margin: 20px 0;
+        padding: 15px;
+        background: #f8f9fa;
+        border-radius: 4px;
+    }
+    .subtitle-results {
+        margin-top: 10px;
+    }
+    .subtitle-item {
+        padding: 10px;
+        border: 1px solid #ddd;
+        margin-bottom: 5px;
+        border-radius: 4px;
+    }
+    .subtitle-item:hover {
+        background: #f0f0f0;
+    }
+</style>
+{% endblock %}
+
+{% block submit_buttons_bottom %}
+{{ block.super }}
+<div class="subtitle-search">
+    <h3>Search Subtitles</h3>
+    <div class="row">
+        <div class="col-md-6">
+            <h4>OpenSubtitles</h4>
+            <button type="button" class="button" onclick="searchSubtitles('opensubtitles')">Search OpenSubtitles</button>
+            <div id="opensubtitles-results" class="subtitle-results"></div>
+        </div>
+        <div class="col-md-6">
+            <h4>SubTitry</h4>
+            <button type="button" class="button" onclick="searchSubtitles('subtitry')">Search SubTitry</button>
+            <div id="subtitry-results" class="subtitle-results"></div>
+        </div>
+    </div>
+</div>
+
+<script>
+function searchSubtitles(source) {
+    const filmId = window.location.pathname.split('/').filter(Boolean).pop();
+    const resultsDiv = document.getElementById(`${source}-results`);
+    resultsDiv.innerHTML = 'Searching...';
+
+    fetch(`/admin/films/film/${filmId}/search-subtitles/`)
+        .then(response => response.json())
+        .then(data => {
+            const results = data[source];
+            if (results.length === 0) {
+                resultsDiv.innerHTML = 'No subtitles found';
+                return;
+            }
+
+            let html = '';
+            results.forEach(subtitle => {
+                html += `
+                    <div class="subtitle-item">
+                        <div>${subtitle.language.toUpperCase()}: ${subtitle.release}</div>
+                        <div>Downloads: ${subtitle.downloads || 'N/A'}</div>
+                        <button type="button" class="button" onclick="downloadSubtitle('${source}', '${subtitle.language}', '${subtitle.id}')">
+                            Download
+                        </button>
+                    </div>
+                `;
+            });
+            resultsDiv.innerHTML = html;
+        })
+        .catch(error => {
+            resultsDiv.innerHTML = 'Error searching subtitles';
+            console.error('Error:', error);
+        });
+}
+
+function downloadSubtitle(source, language, subtitleId) {
+    const filmId = window.location.pathname.split('/').filter(Boolean).pop();
+    window.location.href = `/admin/films/film/${filmId}/download-subtitle/${source}/${language}/?subtitle_id=${subtitleId}`;
+}
+</script>
+{% endblock %} 

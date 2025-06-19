@@ -1,0 +1,135 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block content %}
+<div class="container mt-5">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h3 class="mb-0">Film Request Details</h3>
+                    <a href="{% url 'films:request_list' %}" class="btn btn-outline-secondary btn-sm">Back to List</a>
+                </div>
+                <div class="card-body">
+                    <div class="mb-4">
+                        <h4>{{ request.title }}</h4>
+                        {% if request.tmdb_id %}
+                            <p class="text-muted">TMDB ID: {{ request.tmdb_id }}</p>
+                        {% endif %}
+                    </div>
+
+                    <div class="row mb-4">
+                        <div class="col-md-6">
+                            <div class="card">
+                                <div class="card-body">
+                                    <h5 class="card-title">Request Information</h5>
+                                    <dl class="row mb-0">
+                                        <dt class="col-sm-4">Status</dt>
+                                        <dd class="col-sm-8">
+                                            {% if request.status == 'pending' %}
+                                                <span class="badge bg-warning">Pending</span>
+                                            {% elif request.status == 'processing' %}
+                                                <span class="badge bg-info">Processing</span>
+                                            {% elif request.status == 'completed' %}
+                                                <span class="badge bg-success">Completed</span>
+                                            {% elif request.status == 'failed' %}
+                                                <span class="badge bg-danger">Failed</span>
+                                            {% endif %}
+                                        </dd>
+
+                                        <dt class="col-sm-4">Requested</dt>
+                                        <dd class="col-sm-8">{{ request.created_at|date:"M d, Y H:i" }}</dd>
+
+                                        <dt class="col-sm-4">Delivery Type</dt>
+                                        <dd class="col-sm-8">
+                                            {% if request.delivery_type == 'standard' %}
+                                                Standard (24 hours)
+                                            {% else %}
+                                                Fast (3-4 hours)
+                                            {% endif %}
+                                        </dd>
+
+                                        <dt class="col-sm-4">Estimated Delivery</dt>
+                                        <dd class="col-sm-8">
+                                            {% if request.estimated_delivery %}
+                                                {{ request.estimated_delivery|date:"M d, Y H:i" }}
+                                            {% else %}
+                                                -
+                                            {% endif %}
+                                        </dd>
+                                    </dl>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="col-md-6">
+                            <div class="card">
+                                <div class="card-body">
+                                    <h5 class="card-title">Payment Information</h5>
+                                    <dl class="row mb-0">
+                                        <dt class="col-sm-4">Amount</dt>
+                                        <dd class="col-sm-8">${{ request.payment.amount }}</dd>
+
+                                        <dt class="col-sm-4">Payment Method</dt>
+                                        <dd class="col-sm-8">{{ request.payment.get_payment_method_display }}</dd>
+
+                                        <dt class="col-sm-4">Payment Status</dt>
+                                        <dd class="col-sm-8">
+                                            {% if request.payment.status == 'pending' %}
+                                                <span class="badge bg-warning">Pending</span>
+                                            {% elif request.payment.status == 'completed' %}
+                                                <span class="badge bg-success">Completed</span>
+                                            {% elif request.payment.status == 'failed' %}
+                                                <span class="badge bg-danger">Failed</span>
+                                            {% endif %}
+                                        </dd>
+                                    </dl>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    {% if request.notes %}
+                        <div class="card mb-4">
+                            <div class="card-body">
+                                <h5 class="card-title">Additional Notes</h5>
+                                <p class="card-text">{{ request.notes }}</p>
+                            </div>
+                        </div>
+                    {% endif %}
+
+                    {% if request.status == 'pending' %}
+                        <div class="alert alert-info">
+                            <h5 class="alert-heading">Payment Required</h5>
+                            <p>Please complete the payment to process your film request.</p>
+                            <hr>
+                            <p class="mb-0">
+                                <a href="{% url 'payments:create_payment' %}?request_id={{ request.id }}" class="btn btn-primary">Proceed to Payment</a>
+                            </p>
+                        </div>
+                    {% elif request.status == 'processing' %}
+                        <div class="alert alert-info">
+                            <h5 class="alert-heading">Processing Your Request</h5>
+                            <p>We're working on your film request. Estimated delivery time: {{ request.estimated_delivery|date:"M d, Y H:i" }}</p>
+                        </div>
+                    {% elif request.status == 'completed' %}
+                        <div class="alert alert-success">
+                            <h5 class="alert-heading">Request Completed</h5>
+                            <p>Your film is ready to watch!</p>
+                            <hr>
+                            <p class="mb-0">
+                                <a href="{% url 'films:film_detail' request.film.id %}" class="btn btn-success">Watch Film</a>
+                            </p>
+                        </div>
+                    {% elif request.status == 'failed' %}
+                        <div class="alert alert-danger">
+                            <h5 class="alert-heading">Request Failed</h5>
+                            <p>We couldn't process your film request. Please try again or contact support.</p>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %} 

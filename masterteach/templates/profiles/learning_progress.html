@@ -1,0 +1,65 @@
+{% extends 'base.html' %}
+{% load profile_extras %}
+
+{% block content %}
+<div class="container py-5">
+    <div class="row">
+        <div class="col-12">
+            <div class="card shadow-sm">
+                <div class="card-body">
+                    <h3 class="card-title mb-4">Your Learning Progress</h3>
+                    
+                    {% if progress %}
+                        <div class="table-responsive">
+                            <table class="table table-hover">
+                                <thead>
+                                    <tr>
+                                        <th>Film</th>
+                                        <th>Words Learned</th>
+                                        <th>CEFR Level Progress</th>
+                                        <th>Last Watched</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for item in progress %}
+                                        <tr>
+                                            <td>
+                                                <a href="{% url 'films:film_detail' item.film.id %}" class="text-decoration-none">
+                                                    {{ item.film.title }}
+                                                </a>
+                                            </td>
+                                            <td>
+                                                {% with total_words=item.film.words.count %}
+                                                {% with learned_words=item.words_learned|length %}
+                                                <div class="progress" style="height: 20px;">
+                                                    <div class="progress-bar" role="progressbar" 
+                                                         style="width: {{ learned_words|div:total_words|mul:100 }}%">
+                                                        {{ learned_words }} / {{ total_words }}
+                                                    </div>
+                                                </div>
+                                                {% endwith %}
+                                                {% endwith %}
+                                            </td>
+                                            <td>
+                                                {% for level, count in item.cefr_stats.items %}
+                                                    <span class="badge bg-info me-1">{{ level }}: {{ count }}</span>
+                                                {% endfor %}
+                                            </td>
+                                            <td>{{ item.last_watched|date:"F j, Y" }}</td>
+                                        </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    {% else %}
+                        <div class="text-center py-5">
+                            <p class="text-muted">You haven't started learning any films yet.</p>
+                            <a href="{% url 'films:film_list' %}" class="btn btn-primary">Browse Films</a>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %} 

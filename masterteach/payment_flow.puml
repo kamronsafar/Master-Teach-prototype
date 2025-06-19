@@ -1,0 +1,13 @@
+@startuml
+title Payment Flow Sequence Diagram
+
+actor User
+participant Coinbase
+participant TRON_Wallet
+participant Telegram_Wallet
+
+User -> Coinbase: Makes a payment in $ via Visa/Mastercard
+Coinbase -> TRON_Wallet: Sends USDT or USDC (TRC20)
+TRON_Wallet -> Telegram_Wallet: Sends USDC TRC20
+
+@enduml 

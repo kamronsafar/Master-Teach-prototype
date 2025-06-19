@@ -1,0 +1,16 @@
+{% for context in contexts %}
+<div class="context-item">
+    <div class="context-content">
+        <div class="context-sentence">{{ context.sentence }}</div>
+        <div class="context-time">{{ context.start_time }} - {{ context.end_time }}</div>
+    </div>
+    <button class="play-button" 
+            data-start="{{ context.start_time }}" 
+            data-end="{{ context.end_time }}"
+            data-sentence="{{ context.sentence }}">
+        <i class="fas fa-play"></i>
+    </button>
+</div>
+{% empty %}
+<div class="no-results">No contexts found for this word.</div>
+{% endfor %} 

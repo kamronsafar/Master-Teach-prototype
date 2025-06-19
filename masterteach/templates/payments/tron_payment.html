@@ -1,0 +1,74 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block content %}
+<div class="container py-5">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card shadow">
+                <div class="card-body">
+                    <h2 class="card-title text-center mb-4">TRON Payment</h2>
+                    
+                    <div class="payment-details mb-4">
+                        <div class="alert alert-info">
+                            <h4 class="alert-heading">Payment Instructions</h4>
+                            <p>Please send exactly <strong>{{ trx_amount }} TRX</strong> to the following address:</p>
+                            <div class="input-group mb-3">
+                                <input type="text" class="form-control" id="walletAddress" value="{{ wallet_address }}" readonly>
+                                <button class="btn btn-outline-secondary" type="button" onclick="copyWalletAddress()">
+                                    <i class="fas fa-copy"></i> Copy
+                                </button>
+                            </div>
+                            <p class="mb-0"><small class="text-muted">Make sure to include the payment ID in the memo field.</small></p>
+                        </div>
+                    </div>
+
+                    <div class="payment-status mb-4">
+                        <h4>Payment Status</h4>
+                        <div class="progress">
+                            <div class="progress-bar progress-bar-striped progress-bar-animated" role="progressbar" style="width: 0%"></div>
+                        </div>
+                        <p class="text-center mt-2" id="statusMessage">Waiting for payment...</p>
+                    </div>
+
+                    <div class="text-center">
+                        <button class="btn btn-primary" onclick="checkPaymentStatus()">
+                            Check Payment Status
+                        </button>
+                        <a href="{% url 'payments:failed' %}" class="btn btn-outline-secondary ms-2">
+                            Cancel Payment
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function copyWalletAddress() {
+    const walletAddress = document.getElementById('walletAddress');
+    walletAddress.select();
+    document.execCommand('copy');
+    alert('Wallet address copied to clipboard!');
+}
+
+function checkPaymentStatus() {
+    fetch(`{% url 'payments:verify_tron_payment' payment.id %}`)
+        .then(response => response.json())
+        .then(data => {
+            if (data.status === 'completed') {
+                window.location.href = "{% url 'payments:payment_success' %}";
+            }
+        })
+        .catch(error => {
+            console.error('Error checking payment status:', error);
+        });
+}
+
+// Check payment status every 10 seconds
+setInterval(checkPaymentStatus, 10000);
+</script>
+{% endblock %} 
